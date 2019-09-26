@@ -1,0 +1,35 @@
+{
+  "name": "@dashevo/js-machine-abci",
+  "version": "0.1.0",
+  "description": "Dash ABCI JS State Machine",
+  "engines": {
+    "node": ">=8"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "test:unit": "mocha './test/unit/**/*.spec.js'",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dashevo/js-machine-abci.git"
+  },
+  "authors": [
+    "Konstantin Shuplenkov"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dashevo/js-machine-abci/issues"
+  },
+  "homepage": "https://github.com/dashevo/js-machine-abci",
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-import": "^2.18.2"
+  },
+  "dependencies": {
+    "abci": "^5.0.1",
+    "dotenv-expand": "^5.1.0",
+    "dotenv-safe": "^8.1.0"
+  }
+}
