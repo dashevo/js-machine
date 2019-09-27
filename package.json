@@ -30,6 +30,7 @@
   "dependencies": {
     "abci": "^5.0.1",
     "dotenv-expand": "^5.1.0",
-    "dotenv-safe": "^8.1.0"
+    "dotenv-safe": "^8.1.0",
+    "mongodb": "^3.3.2"
   }
 }
