@@ -28,7 +28,11 @@
     "eslint-plugin-import": "^2.18.2"
   },
   "dependencies": {
+    "@dashevo/dashcore-lib": "^0.17.9",
+    "@dashevo/dpp": "^0.7.2",
+    "@dashevo/drive-grpc": "^0.1.2",
     "abci": "^5.0.1",
+    "cbor": "^5.0.1",
     "dotenv-expand": "^5.1.0",
     "dotenv-safe": "^8.1.0",
     "mongodb": "^3.3.2"
