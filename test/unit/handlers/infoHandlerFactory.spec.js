@@ -1,11 +1,10 @@
 const infoHandlerFactory = require('../../../lib/handlers/infoHandlerFactory');
-const wrapInErrorHandlerFactory = require('../../../lib/handlers/errors/wrapInErrorHandlerFactory.js');
 
 describe('infoHandlerFactory', () => {
   let infoHandler;
   let appStateMock;
 
-  beforeEach(function beforeEach () {
+  beforeEach(function beforeEach() {
     appStateMock = {
       getHeight: this.sinon.stub().returns(0),
       getAppHash: this.sinon.stub().returns(null),

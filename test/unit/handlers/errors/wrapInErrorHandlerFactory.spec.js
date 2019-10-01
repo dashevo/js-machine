@@ -5,7 +5,7 @@ describe('wrapInErrorHandlerFactory', () => {
   let infoHandler;
   let appStateMock;
 
-  beforeEach(function beforeEach () {
+  beforeEach(function beforeEach() {
     appStateMock = {
       getHeight: this.sinon.stub().returns(0),
       getAppHash: this.sinon.stub().returns(null),
@@ -16,22 +16,22 @@ describe('wrapInErrorHandlerFactory', () => {
 
   it('should handle ABCI handler error', async () => {
     const error = new Error('Some error');
-      appStateMock.getHeight.throws(error);
+    appStateMock.getHeight.throws(error);
 
-      const wrapInErrorHandler = wrapInErrorHandlerFactory({
-        error: () => {},
-      });
+    const wrapInErrorHandler = wrapInErrorHandlerFactory({
+      error: () => {},
+    });
 
-      const wrappedInfoHandler = wrapInErrorHandler(infoHandler);
+    const wrappedInfoHandler = wrapInErrorHandler(infoHandler);
 
-      const result = await wrappedInfoHandler();
+    const result = await wrappedInfoHandler();
 
-      expect(result).to.deep.equal({
-        code: 1,
-        log: {
-          message: error.message,
-          data: error,
-        }
-      });
+    expect(result).to.deep.equal({
+      code: 1,
+      log: {
+        message: error.message,
+        data: error,
+      },
+    });
   });
 });
