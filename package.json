@@ -23,18 +23,27 @@
   },
   "homepage": "https://github.com/dashevo/js-machine-abci",
   "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "dirty-chai": "^2.0.1",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
-    "eslint-plugin-import": "^2.18.2"
+    "eslint-plugin-import": "^2.18.2",
+    "mocha": "^6.2.1",
+    "mocha-sinon": "^2.1.0",
+    "sinon": "^7.5.0",
+    "sinon-chai": "^3.3.0"
   },
   "dependencies": {
     "@dashevo/dashcore-lib": "^0.17.9",
+    "@dashevo/dashd-rpc": "^1.3.1",
     "@dashevo/dpp": "^0.7.2",
     "@dashevo/drive-grpc": "^0.1.2",
     "abci": "^5.0.1",
     "cbor": "^5.0.1",
     "dotenv-expand": "^5.1.0",
     "dotenv-safe": "^8.1.0",
+    "jayson": "^3.1.1",
     "mongodb": "^3.3.2"
   }
 }
