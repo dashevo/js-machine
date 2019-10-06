@@ -10,6 +10,10 @@
     "test:unit": "mocha './test/unit/**/*.spec.js'",
     "lint": "eslint ."
   },
+  "contributors": [
+    "Konstantin Shuplenkov <konstantin.shuplenkov@dash.org>",
+    "Ivan Shumkov <shumkov@dash.org>"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dashevo/js-machine-abci.git"
