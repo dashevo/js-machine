@@ -1,0 +1,35 @@
+sudo: false
+dist: trusty
+language: node_js
+
+# Support Active LTS versions of Node.js
+node_js:
+  - '8'
+  - '10'
+
+branches:
+  only:
+    - master
+    - /^v(0|[1-9]\d*)\.(0|[1-9]\d*)$/
+    - /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+
+before_install:
+  # Login to NPM registry
+  - echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
+
+install:
+  - npm ci
+  - cp .env.example .env
+
+script:
+  - npm run check-package
+  - npm run lint
+  - npm run test
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: bash bin/travis-deploy.sh
+  on:
+    tags: true
+    repo: dashevo/js-machine-abci

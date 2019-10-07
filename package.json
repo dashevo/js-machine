@@ -1,0 +1,58 @@
+{
+  "name": "@dashevo/js-machine-abci",
+  "version": "0.1.0",
+  "description": "Dash Platform State Machine",
+  "engines": {
+    "node": ">=8"
+  },
+  "scripts": {
+    "abci": "node scripts/abci.js",
+    "test": "npm run test:coverage",
+    "test:coverage": "nyc --check-coverage --stmts=95 --branch=86 --funcs=93 --lines=95 mocha './test/unit/**/*.spec.js' './test/integration/**/*.spec.js'",
+    "test:unit": "mocha './test/unit/**/*.spec.js'",
+    "test:integration": "mocha './test/integration/**/*.spec.js'",
+    "lint": "eslint .",
+    "check-package": "npm run check-package:name && npm run check-package:version",
+    "check-package:name": "test $(jq -r .name package.json) = $(jq -r .name package-lock.json)",
+    "check-package:version": "test $(jq -r .version package.json) = $(jq -r .version package-lock.json)"
+  },
+  "contributors": [
+    "Konstantin Shuplenkov <konstantin.shuplenkov@dash.org>",
+    "Ivan Shumkov <shumkov@dash.org>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dashevo/js-machine-abci.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dashevo/js-machine-abci/issues"
+  },
+  "homepage": "https://github.com/dashevo/js-machine-abci",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "dirty-chai": "^2.0.1",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-import": "^2.18.2",
+    "mocha": "^6.2.1",
+    "mocha-sinon": "^2.1.0",
+    "nyc": "^14.1.1",
+    "sinon": "^7.5.0",
+    "sinon-chai": "^3.3.0"
+  },
+  "dependencies": {
+    "@dashevo/dashcore-lib": "^0.17.9",
+    "@dashevo/dpp": "^0.7.2",
+    "@dashevo/drive-grpc": "^0.1.2",
+    "abci": "^5.0.1",
+    "awilix": "^4.2.2",
+    "cbor": "^5.0.1",
+    "dotenv-expand": "^5.1.0",
+    "dotenv-safe": "^8.1.0",
+    "jayson": "^3.1.1",
+    "level": "^5.0.1",
+    "lru-cache": "^5.1.1"
+  }
+}
