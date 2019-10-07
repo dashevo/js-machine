@@ -4,7 +4,7 @@ const createServer = require('abci');
 
 const createDIContainer = require('../lib/createDIContainer');
 
-const errorHandler = require('../lib/util/errorHandler');
+const errorHandler = require('../lib/errorHandler');
 
 (async function main() {
   const container = createDIContainer(process.env);
@@ -17,4 +17,8 @@ const errorHandler = require('../lib/util/errorHandler');
     container.resolve('abciPort'),
     container.resolve('abciHost'),
   );
-}()).catch(errorHandler);
+}());
+
+process
+  .on('unhandledRejection', errorHandler)
+  .on('uncaughtException', errorHandler);
