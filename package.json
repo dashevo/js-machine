@@ -7,7 +7,10 @@
   },
   "scripts": {
     "abci": "node scripts/abci.js",
+    "test": "npm run test:coverage",
+    "test:coverage": "nyc --check-coverage --stmts=95 --branch=86 --funcs=93 --lines=95 mocha './test/unit/**/*.spec.js' './test/integration/**/*.spec.js'",
     "test:unit": "mocha './test/unit/**/*.spec.js'",
+    "test:integration": "mocha './test/integration/**/*.spec.js'",
     "lint": "eslint ."
   },
   "contributors": [
@@ -32,6 +35,7 @@
     "eslint-plugin-import": "^2.18.2",
     "mocha": "^6.2.1",
     "mocha-sinon": "^2.1.0",
+    "nyc": "^14.1.1",
     "sinon": "^7.5.0",
     "sinon-chai": "^3.3.0"
   },

@@ -20,7 +20,7 @@ describe('createDIContainer', () => {
 
       expect(abciHandlers).to.have.property('info');
       expect(abciHandlers).to.have.property('checkTx');
-      expect(abciHandlers).to.have.property('blockBegin');
+      expect(abciHandlers).to.have.property('beginBlock');
       expect(abciHandlers).to.have.property('deliverTx');
       expect(abciHandlers).to.have.property('commit');
     });
