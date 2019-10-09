@@ -1,0 +1,4 @@
+.git
+.dockerignore
+.idea
+node_modules
