@@ -1,5 +1,5 @@
 {
-  "name": "@dashevo/js-machine-abci",
+  "name": "@dashevo/machine-abci",
   "version": "0.1.0",
   "description": "Dash Platform State Machine",
   "engines": {
