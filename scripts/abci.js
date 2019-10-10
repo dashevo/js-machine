@@ -7,7 +7,7 @@ const createDIContainer = require('../lib/createDIContainer');
 const errorHandler = require('../lib/errorHandler');
 
 (async function main() {
-  const container = createDIContainer(process.env);
+  const container = await createDIContainer(process.env);
 
   const server = createServer(
     container.resolve('abciHandlers'),
