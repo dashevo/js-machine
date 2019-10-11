@@ -7,8 +7,7 @@ describe('createDIContainer', () => {
     expect(container).to.respondTo('register');
     expect(container).to.respondTo('resolve');
 
-    const db = container.resolve('stateLevelDB');
-    await db.close();
+    await container.dispose();
   });
 
   describe('container', () => {
@@ -19,8 +18,7 @@ describe('createDIContainer', () => {
     });
 
     afterEach(async () => {
-      const db = container.resolve('stateLevelDB');
-      await db.close();
+      await container.dispose();
     });
 
     it('should resolve abciHandlers', () => {
