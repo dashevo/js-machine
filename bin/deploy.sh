@@ -12,7 +12,7 @@ if [[ "$PACKAGE_TAG" != "$TRAVIS_TAG" ]]; then
   exit 1
 fi
 
-IMAGE_NAME="dashpay/drive"
+IMAGE_NAME="dashpay/machine"
 
 # Use regex pattern matching to check if "dev" exists in tag
 DOCKER_TAG="latest"
