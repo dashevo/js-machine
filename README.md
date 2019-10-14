@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/dashevo/js-machine.svg?branch=master)](https://travis-ci.com/dashevo/js-machine)
 
-> It contains JavaScript, Tendermint ABCI application
+> JavaScript implementation of Dash Platform State Machine built as an Tendermint ABCI application
 
 ## Table of Contents
 
