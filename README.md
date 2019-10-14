@@ -1,6 +1,6 @@
-# JS Machine ABCI
+# JS Machine
 
-[![Build Status](https://travis-ci.com/dashevo/js-machine-abci.svg?branch=master)](https://travis-ci.com/dashevo/js-machine-abci)
+[![Build Status](https://travis-ci.com/dashevo/js-machine.svg?branch=master)](https://travis-ci.com/dashevo/js-machine)
 
 > It contains JavaScript, Tendermint ABCI application
 
@@ -25,7 +25,7 @@
 
 ## Contributing
 
-Feel free to dive in! [Open an issue](https://github.com/dashevo/js-machine-abci/issues/new) or submit PRs.
+Feel free to dive in! [Open an issue](https://github.com/dashevo/js-machine/issues/new) or submit PRs.
 
 ## License
 
