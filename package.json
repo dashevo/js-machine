@@ -1,6 +1,6 @@
 {
   "name": "@dashevo/machine-abci",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Dash Platform State Machine",
   "engines": {
     "node": ">=8"
@@ -22,13 +22,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dashevo/js-machine-abci.git"
+    "url": "git+https://github.com/dashevo/js-machine.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dashevo/js-machine-abci/issues"
+    "url": "https://github.com/dashevo/js-machine/issues"
   },
-  "homepage": "https://github.com/dashevo/js-machine-abci",
+  "homepage": "https://github.com/dashevo/js-machine",
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
