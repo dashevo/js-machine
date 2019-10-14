@@ -1,18 +1,24 @@
 const createDIContainer = require('../../lib/createDIContainer');
 
 describe('createDIContainer', () => {
-  it('should create DI container', () => {
-    const container = createDIContainer(process.env);
+  it('should create DI container', async () => {
+    const container = await createDIContainer(process.env);
 
     expect(container).to.respondTo('register');
     expect(container).to.respondTo('resolve');
+
+    await container.dispose();
   });
 
   describe('container', () => {
     let container;
 
-    beforeEach(() => {
-      container = createDIContainer(process.env);
+    beforeEach(async () => {
+      container = await createDIContainer(process.env);
+    });
+
+    afterEach(async () => {
+      await container.dispose();
     });
 
     it('should resolve abciHandlers', () => {
