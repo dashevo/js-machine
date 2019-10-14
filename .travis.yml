@@ -36,4 +36,4 @@ deploy:
   script: bash bin/travis-deploy.sh
   on:
     tags: true
-    repo: dashevo/js-machine-abci
+    repo: dashevo/js-machine
