@@ -6,18 +6,18 @@ const {
 
 const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHandlerFactory');
 const getRequestTxFixture = require('../../../../lib/test/fixtures/getRequestTxFixture');
-const getStHeaderFixture = require('../../../../lib/test/fixtures/getStHeaderFixture');
-const getStPacketFixture = require('../../../../lib/test/fixtures/getStPacketFixture');
+const getDataContractFixture = require('../../../../lib/test/fixtures/getDataContractFixture');
+const getDataContractStateTransitionFixture = require('../../../../lib/test/fixtures/getDataContractStateTransitionFixture');
 
 describe('checkTxHandlerFactory', () => {
   let checkTxHandler;
   let request;
   let decodeStateTransition;
 
-  beforeEach(function beforeEach() {
-    const stPacketFixture = getStPacketFixture();
-    const stHeaderFixture = getStHeaderFixture(stPacketFixture);
-    const requestTxFixture = getRequestTxFixture(stHeaderFixture, stPacketFixture);
+  beforeEach(async function beforeEach() {
+    const dataContractFixture = getDataContractFixture();
+    const stateTransitionFixture = await getDataContractStateTransitionFixture(dataContractFixture);
+    const requestTxFixture = getRequestTxFixture(stateTransitionFixture);
 
     request = {
       tx: requestTxFixture,

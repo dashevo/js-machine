@@ -12,8 +12,8 @@ const deliverTxHandlerFactory = require('../../../../lib/abci/handlers/deliverTx
 const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateStatePromiseClientMock');
 
 const getRequestTxFixture = require('../../../../lib/test/fixtures/getRequestTxFixture');
-const getStHeaderFixture = require('../../../../lib/test/fixtures/getStHeaderFixture');
-const getStPacketFixture = require('../../../../lib/test/fixtures/getStPacketFixture');
+const getDataContractFixture = require('../../../../lib/test/fixtures/getDataContractFixture');
+const getDataContractStateTransitionFixture = require('../../../../lib/test/fixtures/getDataContractStateTransitionFixture');
 
 const BlockchainState = require('../../../../lib/state/BlockchainState');
 
@@ -25,22 +25,18 @@ describe('deliverTxHandlerFactory', () => {
   let blockHash;
   let decodeStateTransitionMock;
   let blockchainState;
-  let stPacketFixture;
-  let stHeaderFixture;
+  let stateTransitionFixture;
 
-  beforeEach(function beforeEach() {
-    stPacketFixture = getStPacketFixture();
-    stHeaderFixture = getStHeaderFixture(stPacketFixture);
-    const requestTxFixture = getRequestTxFixture(stHeaderFixture, stPacketFixture);
+  beforeEach(async function beforeEach() {
+    const dataContractFixture = getDataContractFixture();
+    stateTransitionFixture = await getDataContractStateTransitionFixture(dataContractFixture);
+    const requestTxFixture = getRequestTxFixture(stateTransitionFixture);
 
     request = {
       tx: requestTxFixture,
     };
 
-    decodeStateTransitionMock = this.sinon.stub().resolves({
-      stHeader: stHeaderFixture,
-      stPacket: stPacketFixture,
-    });
+    decodeStateTransitionMock = this.sinon.stub().resolves(stateTransitionFixture);
 
     blockHeight = 1;
     blockHash = Buffer.alloc(0);
@@ -63,12 +59,8 @@ describe('deliverTxHandlerFactory', () => {
     applyStateTransitionRequest.setBlockHeight(blockHeight);
     applyStateTransitionRequest.setBlockHash(blockHash);
 
-    applyStateTransitionRequest.setStateTransitionPacket(
-      stPacketFixture.serialize(),
-    );
-
-    applyStateTransitionRequest.setStateTransitionHeader(
-      Buffer.from(stHeaderFixture.serialize(), 'hex'),
+    applyStateTransitionRequest.setStateTransition(
+      stateTransitionFixture.serialize(),
     );
 
     expect(response).to.be.an.instanceOf(ResponseDeliverTx);

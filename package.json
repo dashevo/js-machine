@@ -43,9 +43,8 @@
     "sinon-chai": "^3.3.0"
   },
   "dependencies": {
-    "@dashevo/dashcore-lib": "^0.17.9",
-    "@dashevo/dpp": "^0.7.2",
-    "@dashevo/drive-grpc": "^0.1.2",
+    "@dashevo/dpp": "^0.9.0-dev.1",
+    "@dashevo/drive-grpc": "^0.3.0",
     "abci": "^5.0.1",
     "awilix": "^4.2.2",
     "cbor": "^5.0.1",
