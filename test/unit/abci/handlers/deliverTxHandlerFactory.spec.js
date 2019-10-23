@@ -11,7 +11,6 @@ const {
 const deliverTxHandlerFactory = require('../../../../lib/abci/handlers/deliverTxHandlerFactory');
 const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateStatePromiseClientMock');
 
-const getRequestTxFixture = require('../../../../lib/test/fixtures/getRequestTxFixture');
 const getDataContractFixture = require('../../../../lib/test/fixtures/getDataContractFixture');
 const getDataContractStateTransitionFixture = require('../../../../lib/test/fixtures/getDataContractStateTransitionFixture');
 
@@ -30,10 +29,9 @@ describe('deliverTxHandlerFactory', () => {
   beforeEach(async function beforeEach() {
     const dataContractFixture = getDataContractFixture();
     stateTransitionFixture = await getDataContractStateTransitionFixture(dataContractFixture);
-    const requestTxFixture = getRequestTxFixture(stateTransitionFixture);
 
     request = {
-      tx: requestTxFixture,
+      tx: stateTransitionFixture.serialize(),
     };
 
     decodeStateTransitionMock = this.sinon.stub().resolves(stateTransitionFixture);

@@ -1,11 +1,8 @@
-const cbor = require('cbor');
-
 const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 
 const decodeStateTransitionFactory = require('../../lib/decodeStateTransitionFactory');
 
-const getRequestTxFixture = require('../../lib/test/fixtures/getRequestTxFixture');
 const getDataContractFixture = require('../../lib/test/fixtures/getDataContractFixture');
 const getDataContractStateTransitionFixture = require('../../lib/test/fixtures/getDataContractStateTransitionFixture');
 
@@ -21,7 +18,7 @@ describe('decodeStateTransitionFactory', () => {
   beforeEach(async function beforeEach() {
     const dataContractFixture = getDataContractFixture();
     stateTransitionFixture = await getDataContractStateTransitionFixture(dataContractFixture);
-    stRequestFixture = getRequestTxFixture(stateTransitionFixture);
+    stRequestFixture = stateTransitionFixture.serialize();
 
     dppMock = createDPPMock(this.sinon);
     dppMock.stateTransition.createFromSerialized.resolves(stateTransitionFixture);
@@ -30,15 +27,8 @@ describe('decodeStateTransitionFactory', () => {
   });
 
   it('should throw InvalidArgumentAbciError if stateTransition is not specified', async () => {
-    // Remove stateTransition from request
-    const decodedSTFixture = cbor.decode(stRequestFixture);
-
-    delete decodedSTFixture.stateTransition;
-
-    stRequestFixture = cbor.encode(decodedSTFixture);
-
     try {
-      await decodeStateTransition(stRequestFixture);
+      await decodeStateTransition();
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {

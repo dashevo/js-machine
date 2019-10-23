@@ -5,7 +5,6 @@ const {
 } = require('abci/types');
 
 const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHandlerFactory');
-const getRequestTxFixture = require('../../../../lib/test/fixtures/getRequestTxFixture');
 const getDataContractFixture = require('../../../../lib/test/fixtures/getDataContractFixture');
 const getDataContractStateTransitionFixture = require('../../../../lib/test/fixtures/getDataContractStateTransitionFixture');
 
@@ -17,10 +16,9 @@ describe('checkTxHandlerFactory', () => {
   beforeEach(async function beforeEach() {
     const dataContractFixture = getDataContractFixture();
     const stateTransitionFixture = await getDataContractStateTransitionFixture(dataContractFixture);
-    const requestTxFixture = getRequestTxFixture(stateTransitionFixture);
 
     request = {
-      tx: requestTxFixture,
+      tx: stateTransitionFixture.serialize(),
     };
 
     decodeStateTransition = this.sinon.stub();
