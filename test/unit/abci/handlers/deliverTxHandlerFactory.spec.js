@@ -8,14 +8,14 @@ const {
   ApplyStateTransitionRequest,
 } = require('@dashevo/drive-grpc');
 
+const DashPlatformProtocol = require('@dashevo/dpp');
+
 const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
+const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
 
 const deliverTxHandlerFactory = require('../../../../lib/abci/handlers/deliverTxHandlerFactory');
 const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateStatePromiseClientMock');
-
-const getDataContractFixture = require('../../../../lib/test/fixtures/getDataContractFixture');
-const getDataContractStateTransitionFixture = require('../../../../lib/test/fixtures/getDataContractStateTransitionFixture');
 
 const BlockchainState = require('../../../../lib/state/BlockchainState');
 
@@ -32,9 +32,10 @@ describe('deliverTxHandlerFactory', () => {
   let blockchainState;
   let stateTransitionFixture;
 
-  beforeEach(async function beforeEach() {
+  beforeEach(function beforeEach() {
+    const dpp = new DashPlatformProtocol();
     const dataContractFixture = getDataContractFixture();
-    stateTransitionFixture = await getDataContractStateTransitionFixture(dataContractFixture);
+    stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
 
     request = {
       tx: stateTransitionFixture.serialize(),

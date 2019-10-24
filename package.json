@@ -1,6 +1,6 @@
 {
   "name": "@dashevo/machine-abci",
-  "version": "0.2.0-dev",
+  "version": "0.2.0-dev.1",
   "description": "Dash Platform State Machine",
   "engines": {
     "node": ">=8"

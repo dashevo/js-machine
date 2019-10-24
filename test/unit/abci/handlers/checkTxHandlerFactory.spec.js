@@ -4,12 +4,13 @@ const {
   },
 } = require('abci/types');
 
+const DashPlatformProtocol = require('@dashevo/dpp');
+
 const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
+const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
 
 const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHandlerFactory');
-const getDataContractFixture = require('../../../../lib/test/fixtures/getDataContractFixture');
-const getDataContractStateTransitionFixture = require('../../../../lib/test/fixtures/getDataContractStateTransitionFixture');
 
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
@@ -19,9 +20,10 @@ describe('checkTxHandlerFactory', () => {
   let request;
   let dppMock;
 
-  beforeEach(async function beforeEach() {
+  beforeEach(function beforeEach() {
+    const dpp = new DashPlatformProtocol();
     const dataContractFixture = getDataContractFixture();
-    const stateTransitionFixture = await getDataContractStateTransitionFixture(dataContractFixture);
+    const stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
 
     request = {
       tx: stateTransitionFixture.serialize(),
