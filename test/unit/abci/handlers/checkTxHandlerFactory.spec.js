@@ -4,28 +4,36 @@ const {
   },
 } = require('abci/types');
 
+const DashPlatformProtocol = require('@dashevo/dpp');
+
+const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
+const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
+const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
+const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
+
 const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHandlerFactory');
-const getRequestTxFixture = require('../../../../lib/test/fixtures/getRequestTxFixture');
-const getStHeaderFixture = require('../../../../lib/test/fixtures/getStHeaderFixture');
-const getStPacketFixture = require('../../../../lib/test/fixtures/getStPacketFixture');
+
+const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
+const AbciError = require('../../../../lib/abci/errors/AbciError');
 
 describe('checkTxHandlerFactory', () => {
   let checkTxHandler;
   let request;
-  let decodeStateTransition;
+  let dppMock;
+  let stateTransitionFixture;
 
   beforeEach(function beforeEach() {
-    const stPacketFixture = getStPacketFixture();
-    const stHeaderFixture = getStHeaderFixture(stPacketFixture);
-    const requestTxFixture = getRequestTxFixture(stHeaderFixture, stPacketFixture);
+    const dpp = new DashPlatformProtocol();
+    const dataContractFixture = getDataContractFixture();
+    stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
 
     request = {
-      tx: requestTxFixture,
+      tx: stateTransitionFixture.serialize(),
     };
 
-    decodeStateTransition = this.sinon.stub();
+    dppMock = createDPPMock(this.sinon);
 
-    checkTxHandler = checkTxHandlerFactory(decodeStateTransition);
+    checkTxHandler = checkTxHandlerFactory(dppMock);
   });
 
   it('should validate State Transition and return response with code 0', async () => {
@@ -34,6 +42,54 @@ describe('checkTxHandlerFactory', () => {
     expect(response).to.be.an.instanceOf(ResponseCheckTx);
     expect(response.code).to.equal(0);
 
-    expect(decodeStateTransition).to.be.calledOnceWith(request.tx);
+    expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
+  });
+
+  it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
+    try {
+      await checkTxHandler({});
+
+      expect.fail('should throw InvalidArgumentAbciError error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
+      expect(e.getMessage()).to.equal('Invalid argument: State Transition is not specified');
+      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+    }
+  });
+
+  it('should throw InvalidArgumentAbciError if State Transition is invalid', async () => {
+    const consensusError = new ConsensusError('Invalid state transition');
+    const error = new InvalidStateTransitionError(
+      [consensusError],
+      stateTransitionFixture.toJSON(),
+    );
+
+    dppMock.stateTransition.createFromSerialized.throws(error);
+
+    try {
+      await checkTxHandler(request);
+
+      expect.fail('should throw InvalidArgumentAbciError error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
+      expect(e.getMessage()).to.equal('Invalid argument: State Transition is invalid');
+      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+      expect(e.getData()).to.deep.equal({
+        errors: [consensusError],
+      });
+    }
+  });
+
+  it('should throw the error from createFromSerialized if throws not InvalidStateTransitionError', async () => {
+    const error = new Error('Custom error');
+    dppMock.stateTransition.createFromSerialized.throws(error);
+
+    try {
+      await checkTxHandler(request);
+
+      expect.fail('should throw an error');
+    } catch (e) {
+      expect(e).to.be.equal(error);
+    }
   });
 });
