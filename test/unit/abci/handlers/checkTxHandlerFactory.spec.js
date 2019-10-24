@@ -41,19 +41,19 @@ describe('checkTxHandlerFactory', () => {
     expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
   });
 
-  it('should throw InvalidArgumentAbciError if stateTransition is not specified', async () => {
+  it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
     try {
       await checkTxHandler({});
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
       expect(e).to.be.instanceOf(InvalidArgumentAbciError);
-      expect(e.getMessage()).to.equal('Invalid argument: stateTransition is not specified');
+      expect(e.getMessage()).to.equal('Invalid argument: State Transition is not specified');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
     }
   });
 
-  it('should throw InvalidArgumentAbciError if stateTransition is invalid', async () => {
+  it('should throw InvalidArgumentAbciError if State Transition is invalid', async () => {
     dppMock.stateTransition.createFromSerialized.throws(new InvalidStateTransitionError());
 
     try {
@@ -62,7 +62,7 @@ describe('checkTxHandlerFactory', () => {
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
       expect(e).to.be.instanceOf(InvalidArgumentAbciError);
-      expect(e.getMessage()).to.equal('Invalid argument: stateTransition is invalid');
+      expect(e.getMessage()).to.equal('Invalid argument: State Transition is invalid');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
     }
   });
