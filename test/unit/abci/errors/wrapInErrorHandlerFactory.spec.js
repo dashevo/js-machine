@@ -1,3 +1,5 @@
+const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
+
 const wrapInErrorHandlerFactory = require('../../../../lib/abci/errors/wrapInErrorHandlerFactory');
 
 const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHandlerFactory');
@@ -7,7 +9,7 @@ const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArg
 
 describe('wrapInErrorHandlerFactory', () => {
   let checkTxHandler;
-  let decodeStateTransitionMock;
+  let dppMock;
   let loggerMock;
   let request;
 
@@ -22,17 +24,17 @@ describe('wrapInErrorHandlerFactory', () => {
 
     const wrapInErrorHandler = wrapInErrorHandlerFactory(loggerMock);
 
-    decodeStateTransitionMock = this.sinon.stub();
+    dppMock = createDPPMock(this.sinon);
 
     checkTxHandler = wrapInErrorHandler(
-      checkTxHandlerFactory(decodeStateTransitionMock),
+      checkTxHandlerFactory(dppMock),
     );
   });
 
   it('should respond with internal error code if any Error is thrown in handler', async () => {
     const error = new Error();
 
-    decodeStateTransitionMock.throws(error);
+    dppMock.stateTransition.createFromSerialized.throws(error);
 
     const response = await checkTxHandler(request);
 
@@ -50,7 +52,7 @@ describe('wrapInErrorHandlerFactory', () => {
     const data = { sample: 'data' };
     const error = new InternalAbciError(new Error(), data);
 
-    decodeStateTransitionMock.throws(error);
+    dppMock.stateTransition.createFromSerialized.throws(error);
 
     const response = await checkTxHandler(request);
 
@@ -69,7 +71,7 @@ describe('wrapInErrorHandlerFactory', () => {
     const data = { sample: 'data' };
     const error = new InvalidArgumentAbciError('test', data);
 
-    decodeStateTransitionMock.throws(error);
+    dppMock.stateTransition.createFromSerialized.throws(error);
 
     const response = await checkTxHandler(request);
 

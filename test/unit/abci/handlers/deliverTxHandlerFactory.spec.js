@@ -8,6 +8,9 @@ const {
   ApplyStateTransitionRequest,
 } = require('@dashevo/drive-grpc');
 
+const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
+const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
+
 const deliverTxHandlerFactory = require('../../../../lib/abci/handlers/deliverTxHandlerFactory');
 const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateStatePromiseClientMock');
 
@@ -16,13 +19,16 @@ const getDataContractStateTransitionFixture = require('../../../../lib/test/fixt
 
 const BlockchainState = require('../../../../lib/state/BlockchainState');
 
+const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
+const AbciError = require('../../../../lib/abci/errors/AbciError');
+
 describe('deliverTxHandlerFactory', () => {
   let deliverTxHandler;
   let driveUpdateStateClient;
   let request;
   let blockHeight;
   let blockHash;
-  let decodeStateTransitionMock;
+  let dppMock;
   let blockchainState;
   let stateTransitionFixture;
 
@@ -34,7 +40,8 @@ describe('deliverTxHandlerFactory', () => {
       tx: stateTransitionFixture.serialize(),
     };
 
-    decodeStateTransitionMock = this.sinon.stub().resolves(stateTransitionFixture);
+    dppMock = createDPPMock(this.sinon);
+    dppMock.stateTransition.createFromSerialized.resolves(stateTransitionFixture);
 
     blockHeight = 1;
     blockHash = Buffer.alloc(0);
@@ -43,7 +50,7 @@ describe('deliverTxHandlerFactory', () => {
     driveUpdateStateClient = new UpdateStatePromiseClientMock(this.sinon);
 
     deliverTxHandler = deliverTxHandlerFactory(
-      decodeStateTransitionMock,
+      dppMock,
       driveUpdateStateClient,
       blockchainState,
     );
@@ -67,5 +74,44 @@ describe('deliverTxHandlerFactory', () => {
     expect(driveUpdateStateClient.applyStateTransition).to.be.calledOnceWith(
       applyStateTransitionRequest,
     );
+  });
+
+  it('should throw InvalidArgumentAbciError if stateTransition is not specified', async () => {
+    try {
+      await deliverTxHandler({});
+
+      expect.fail('should throw InvalidArgumentAbciError error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
+      expect(e.getMessage()).to.equal('Invalid argument: stateTransition is not specified');
+      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+    }
+  });
+
+  it('should throw InvalidArgumentAbciError if stateTransition is invalid', async () => {
+    dppMock.stateTransition.createFromSerialized.throws(new InvalidStateTransitionError());
+
+    try {
+      await deliverTxHandler(request);
+
+      expect.fail('should throw InvalidArgumentAbciError error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
+      expect(e.getMessage()).to.equal('Invalid argument: stateTransition is invalid');
+      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+    }
+  });
+
+  it('should throw the error from createFromSerialized if throws not InvalidStateTransitionError', async () => {
+    dppMock.stateTransition.createFromSerialized.throws(new Error('Custom error'));
+
+    try {
+      await deliverTxHandler(request);
+
+      expect.fail('should throw an error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(Error);
+      expect(e.message).to.equal('Custom error');
+    }
   });
 });
