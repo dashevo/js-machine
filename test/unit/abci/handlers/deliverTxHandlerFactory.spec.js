@@ -11,6 +11,7 @@ const {
 const DashPlatformProtocol = require('@dashevo/dpp');
 
 const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
+const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
 
@@ -90,7 +91,13 @@ describe('deliverTxHandlerFactory', () => {
   });
 
   it('should throw InvalidArgumentAbciError if State Transition is invalid', async () => {
-    dppMock.stateTransition.createFromSerialized.throws(new InvalidStateTransitionError());
+    const consensusError = new ConsensusError('Invalid state transition');
+    const error = new InvalidStateTransitionError(
+      [consensusError],
+      stateTransitionFixture.toJSON(),
+    );
+
+    dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
       await deliverTxHandler(request);
@@ -100,19 +107,22 @@ describe('deliverTxHandlerFactory', () => {
       expect(e).to.be.instanceOf(InvalidArgumentAbciError);
       expect(e.getMessage()).to.equal('Invalid argument: State Transition is invalid');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+      expect(e.getData()).to.deep.equal({
+        errors: [consensusError],
+      });
     }
   });
 
   it('should throw the error from createFromSerialized if throws not InvalidStateTransitionError', async () => {
-    dppMock.stateTransition.createFromSerialized.throws(new Error('Custom error'));
+    const error = new Error('Custom error');
+    dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
       await deliverTxHandler(request);
 
       expect.fail('should throw an error');
     } catch (e) {
-      expect(e).to.be.instanceOf(Error);
-      expect(e.message).to.equal('Custom error');
+      expect(e).to.be.equal(error);
     }
   });
 });
