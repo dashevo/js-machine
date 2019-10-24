@@ -1,17 +1,13 @@
-const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
-
 const wrapInErrorHandlerFactory = require('../../../../lib/abci/errors/wrapInErrorHandlerFactory');
-
-const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHandlerFactory');
 
 const InternalAbciError = require('../../../../lib/abci/errors/InternalAbciError');
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 
 describe('wrapInErrorHandlerFactory', () => {
-  let checkTxHandler;
-  let dppMock;
   let loggerMock;
+  let methodMock;
   let request;
+  let handler;
 
   beforeEach(function beforeEach() {
     request = {
@@ -23,20 +19,19 @@ describe('wrapInErrorHandlerFactory', () => {
     };
 
     const wrapInErrorHandler = wrapInErrorHandlerFactory(loggerMock);
+    methodMock = this.sinon.stub();
 
-    dppMock = createDPPMock(this.sinon);
-
-    checkTxHandler = wrapInErrorHandler(
-      checkTxHandlerFactory(dppMock),
+    handler = wrapInErrorHandler(
+      methodMock,
     );
   });
 
   it('should respond with internal error code if any Error is thrown in handler', async () => {
-    const error = new Error();
+    const error = new Error('Custom error');
 
-    dppMock.stateTransition.createFromSerialized.throws(error);
+    methodMock.throws(error);
 
-    const response = await checkTxHandler(request);
+    const response = await handler(request);
 
     expect(response).to.deep.equal({
       code: 1,
@@ -52,9 +47,9 @@ describe('wrapInErrorHandlerFactory', () => {
     const data = { sample: 'data' };
     const error = new InternalAbciError(new Error(), data);
 
-    dppMock.stateTransition.createFromSerialized.throws(error);
+    methodMock.throws(error);
 
-    const response = await checkTxHandler(request);
+    const response = await handler(request);
 
     expect(response).to.deep.equal({
       code: error.getCode(),
@@ -71,9 +66,9 @@ describe('wrapInErrorHandlerFactory', () => {
     const data = { sample: 'data' };
     const error = new InvalidArgumentAbciError('test', data);
 
-    dppMock.stateTransition.createFromSerialized.throws(error);
+    methodMock.throws(error);
 
-    const response = await checkTxHandler(request);
+    const response = await handler(request);
 
     expect(response).to.deep.equal({
       code: error.getCode(),
