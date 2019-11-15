@@ -14,7 +14,7 @@ const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateSt
 
 const BlockchainState = require('../../../../lib/state/BlockchainState');
 
-const IdentityState = require('../../../../lib/identities/IdentityState');
+const IdentityState = require('../../../../lib/identity/IdentityState');
 
 
 describe('commitHandlerFactory', () => {
@@ -24,7 +24,9 @@ describe('commitHandlerFactory', () => {
   let blockHash;
   let appHash;
   let blockchainStateRepositoryMock;
-  let identitiesRepositoryMock;
+  let identityRepositoryMock;
+  let identityModelMock;
+  let identityState;
 
   beforeEach(function beforeEach() {
     blockHeight = 2;
@@ -32,7 +34,7 @@ describe('commitHandlerFactory', () => {
     appHash = Buffer.alloc(0);
 
     const blockchainState = new BlockchainState(blockHeight, appHash);
-    const identityState = new IdentityState();
+    identityState = new IdentityState();
 
     driveUpdateStateClientMock = new UpdateStatePromiseClientMock(this.sinon);
 
@@ -40,16 +42,18 @@ describe('commitHandlerFactory', () => {
       store: this.sinon.stub(),
     };
 
-    identitiesRepositoryMock = {
+    identityRepositoryMock = {
       store: this.sinon.stub(),
     };
+
+    identityModelMock = this.sinon.stub();
 
     commitHandler = commitHandlerFactory(
       driveUpdateStateClientMock,
       blockchainState,
       blockchainStateRepositoryMock,
       identityState,
-      identitiesRepositoryMock,
+      identityRepositoryMock,
     );
   });
 
@@ -74,5 +78,15 @@ describe('commitHandlerFactory', () => {
     expect(blockchainState).to.be.an.instanceOf(BlockchainState);
     expect(blockchainState.getLastBlockHeight()).to.equal(blockHeight);
     expect(blockchainState.getLastBlockAppHash()).to.deep.equal(appHash);
+
+    expect(identityRepositoryMock.store).to.be.not.called();
+  });
+
+  it('should store identity if identityModel is presented', async () => {
+    identityState.setIdentityModel(identityModelMock);
+
+    await commitHandler();
+
+    expect(identityRepositoryMock.store).to.be.calledOnceWith(identityModelMock);
   });
 });

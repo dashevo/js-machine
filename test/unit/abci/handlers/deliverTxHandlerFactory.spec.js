@@ -14,13 +14,12 @@ const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
 const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
+const IdentityModel = require('@dashevo/dpp/lib/identity/model/IdentityModel');
 
 const deliverTxHandlerFactory = require('../../../../lib/abci/handlers/deliverTxHandlerFactory');
 const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateStatePromiseClientMock');
 
 const BlockchainState = require('../../../../lib/state/BlockchainState');
-
-const IdentityState = require('../../../../lib/identities/IdentityState');
 
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
@@ -34,11 +33,14 @@ describe('deliverTxHandlerFactory', () => {
   let dppMock;
   let blockchainState;
   let stateTransitionFixture;
+  let identityStateMock;
 
   beforeEach(function beforeEach() {
     const dpp = new DashPlatformProtocol();
     const dataContractFixture = getDataContractFixture();
-    const identityState = new IdentityState();
+    identityStateMock = {
+      setIdentityModel: this.sinon.stub(),
+    };
     stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
 
     request = {
@@ -58,7 +60,7 @@ describe('deliverTxHandlerFactory', () => {
       dppMock,
       driveUpdateStateClient,
       blockchainState,
-      identityState,
+      identityStateMock,
     );
   });
 
@@ -80,6 +82,8 @@ describe('deliverTxHandlerFactory', () => {
     expect(driveUpdateStateClient.applyStateTransition).to.be.calledOnceWith(
       applyStateTransitionRequest,
     );
+
+    expect(identityStateMock.setIdentityModel).to.be.not.called();
   });
 
   it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
@@ -128,5 +132,16 @@ describe('deliverTxHandlerFactory', () => {
     } catch (e) {
       expect(e).to.be.equal(error);
     }
+  });
+
+  it.skip('should set identity model if ST has IDENTITY_CREATE type', async () => {
+    // @TODO implement state transition fixture with IDENTITY_CREATE type
+    await deliverTxHandler(request);
+
+    const identityModel = new IdentityModel();
+    identityModel.applyStateTransition(stateTransitionFixture);
+
+    expect(identityStateMock.setIdentityModel).to.be.calledWith(identityModel);
+    expect(driveUpdateStateClient.applyStateTransition).to.be.not.called();
   });
 });
