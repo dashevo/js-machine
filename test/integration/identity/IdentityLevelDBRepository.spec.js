@@ -34,7 +34,7 @@ describe('IdentityLevelDBRepository', () => {
 
   describe('#store', () => {
     it('should store identity', async () => {
-      const repositoryInstance = await repository.store(identityModel);
+      const repositoryInstance = await repository.store([identityModel]);
 
       expect(repositoryInstance).to.equal(repository);
 
@@ -50,7 +50,7 @@ describe('IdentityLevelDBRepository', () => {
 
   describe('#fetch', () => {
     it('should return null if identity was not found', async () => {
-      await repository.store(identityModel);
+      await repository.store([identityModel]);
 
       const storedState = await repository.fetch('nonExistingId');
 

@@ -16,7 +16,6 @@ const BlockchainState = require('../../../../lib/state/BlockchainState');
 
 const IdentityState = require('../../../../lib/identity/IdentityState');
 
-
 describe('commitHandlerFactory', () => {
   let commitHandler;
   let driveUpdateStateClientMock;
@@ -83,10 +82,10 @@ describe('commitHandlerFactory', () => {
   });
 
   it('should store identity if identityModel is presented', async () => {
-    identityState.setIdentityModel(identityModelMock);
+    identityState.addIdentityModel(identityModelMock);
 
     await commitHandler();
 
-    expect(identityRepositoryMock.store).to.be.calledOnceWith(identityModelMock);
+    expect(identityRepositoryMock.store).to.be.calledOnceWith([identityModelMock]);
   });
 });

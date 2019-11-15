@@ -10,26 +10,30 @@ describe('IdentityState', () => {
   });
 
   it('should set identity', async () => {
-    identityState.setIdentityModel(identityModelMock);
+    identityState.addIdentityModel(identityModelMock);
+    identityState.addIdentityModel(identityModelMock);
 
-    expect(identityState.identityModel).to.deep.equal(identityModelMock);
+    expect(identityState.identityModels).to.have.lengthOf(2);
+    expect(identityState.identityModels[0]).to.deep.equal(identityModelMock);
+    expect(identityState.identityModels[1]).to.deep.equal(identityModelMock);
   });
 
   it('should return identity', async () => {
-    identityState.setIdentityModel(identityModelMock);
+    identityState.addIdentityModel(identityModelMock);
 
-    const returnedIdentityModel = identityState.getIdentityModel();
+    const returnedIdentityModel = identityState.getIdentityModels();
 
-    expect(returnedIdentityModel).to.deep.equal(identityModelMock);
+    expect(returnedIdentityModel).to.deep.equal([identityModelMock]);
   });
 
   it('should reset identity', async () => {
-    identityState.setIdentityModel(identityModelMock);
+    identityState.addIdentityModel(identityModelMock);
 
-    expect(identityState.identityModel).to.deep.equal(identityModelMock);
+    expect(identityState.identityModels).to.have.lengthOf(1);
+    expect(identityState.identityModels[0]).to.deep.equal(identityModelMock);
 
     identityState.reset();
 
-    expect(identityState.identityModel).to.be.null();
+    expect(identityState.identityModels).to.have.lengthOf(0);
   });
 });
