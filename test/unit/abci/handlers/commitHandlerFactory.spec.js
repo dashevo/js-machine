@@ -14,6 +14,9 @@ const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateSt
 
 const BlockchainState = require('../../../../lib/state/BlockchainState');
 
+const IdentityState = require('../../../../lib/identities/IdentityState');
+
+
 describe('commitHandlerFactory', () => {
   let commitHandler;
   let driveUpdateStateClientMock;
@@ -21,6 +24,7 @@ describe('commitHandlerFactory', () => {
   let blockHash;
   let appHash;
   let blockchainStateRepositoryMock;
+  let identitiesRepositoryMock;
 
   beforeEach(function beforeEach() {
     blockHeight = 2;
@@ -28,6 +32,7 @@ describe('commitHandlerFactory', () => {
     appHash = Buffer.alloc(0);
 
     const blockchainState = new BlockchainState(blockHeight, appHash);
+    const identityState = new IdentityState();
 
     driveUpdateStateClientMock = new UpdateStatePromiseClientMock(this.sinon);
 
@@ -35,10 +40,16 @@ describe('commitHandlerFactory', () => {
       store: this.sinon.stub(),
     };
 
+    identitiesRepositoryMock = {
+      store: this.sinon.stub(),
+    };
+
     commitHandler = commitHandlerFactory(
       driveUpdateStateClientMock,
       blockchainState,
       blockchainStateRepositoryMock,
+      identityState,
+      identitiesRepositoryMock,
     );
   });
 

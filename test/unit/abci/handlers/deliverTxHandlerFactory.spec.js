@@ -20,6 +20,8 @@ const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateSt
 
 const BlockchainState = require('../../../../lib/state/BlockchainState');
 
+const IdentityState = require('../../../../lib/identities/IdentityState');
+
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
 
@@ -36,6 +38,7 @@ describe('deliverTxHandlerFactory', () => {
   beforeEach(function beforeEach() {
     const dpp = new DashPlatformProtocol();
     const dataContractFixture = getDataContractFixture();
+    const identityState = new IdentityState();
     stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
 
     request = {
@@ -55,6 +58,7 @@ describe('deliverTxHandlerFactory', () => {
       dppMock,
       driveUpdateStateClient,
       blockchainState,
+      identityState,
     );
   });
 

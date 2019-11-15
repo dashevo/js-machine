@@ -13,18 +13,26 @@ const beginBlockHandlerFactory = require('../../../../lib/abci/handlers/beginBlo
 const BlockchainState = require('../../../../lib/state/BlockchainState');
 const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateStatePromiseClientMock');
 
+const IdentityState = require('../../../../lib/identities/IdentityState');
+
 describe('beginBlockHandlerFactory', () => {
   let beginBlockHandler;
   let request;
   let blockchainState;
   let driveUpdateStateClientMock;
   let blockHeight;
+  let identityState;
 
   beforeEach(function beforeEach() {
     blockchainState = new BlockchainState();
     driveUpdateStateClientMock = new UpdateStatePromiseClientMock(this.sinon);
+    identityState = new IdentityState();
 
-    beginBlockHandler = beginBlockHandlerFactory(driveUpdateStateClientMock, blockchainState);
+    beginBlockHandler = beginBlockHandlerFactory(
+      driveUpdateStateClientMock,
+      blockchainState,
+      identityState,
+    );
 
     blockHeight = 2;
 
