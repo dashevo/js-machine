@@ -33,12 +33,12 @@ describe('deliverTxHandlerFactory', () => {
   let dppMock;
   let blockchainState;
   let stateTransitionFixture;
-  let identityStateMock;
+  let uncommittedIdentitiesMock;
 
   beforeEach(function beforeEach() {
     const dpp = new DashPlatformProtocol();
     const dataContractFixture = getDataContractFixture();
-    identityStateMock = {
+    uncommittedIdentitiesMock = {
       setIdentityModel: this.sinon.stub(),
     };
     stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
@@ -60,7 +60,7 @@ describe('deliverTxHandlerFactory', () => {
       dppMock,
       driveUpdateStateClient,
       blockchainState,
-      identityStateMock,
+      uncommittedIdentitiesMock,
     );
   });
 
@@ -83,7 +83,7 @@ describe('deliverTxHandlerFactory', () => {
       applyStateTransitionRequest,
     );
 
-    expect(identityStateMock.setIdentityModel).to.be.not.called();
+    expect(uncommittedIdentitiesMock.setIdentityModel).to.be.not.called();
   });
 
   it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
@@ -141,7 +141,7 @@ describe('deliverTxHandlerFactory', () => {
     const identityModel = new IdentityModel();
     identityModel.applyStateTransition(stateTransitionFixture);
 
-    expect(identityStateMock.setIdentityModel).to.be.calledWith(identityModel);
+    expect(uncommittedIdentitiesMock.setIdentityModel).to.be.calledWith(identityModel);
     expect(driveUpdateStateClient.applyStateTransition).to.be.not.called();
   });
 });

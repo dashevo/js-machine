@@ -14,7 +14,7 @@ const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateSt
 
 const BlockchainState = require('../../../../lib/state/BlockchainState');
 
-const IdentityState = require('../../../../lib/identity/IdentityState');
+const UncommittedIdentities = require('../../../../lib/identity/UncommittedIdentities');
 
 describe('commitHandlerFactory', () => {
   let commitHandler;
@@ -25,7 +25,7 @@ describe('commitHandlerFactory', () => {
   let blockchainStateRepositoryMock;
   let identityRepositoryMock;
   let identityModelMock;
-  let identityState;
+  let uncommittedIdentities;
 
   beforeEach(function beforeEach() {
     blockHeight = 2;
@@ -33,7 +33,7 @@ describe('commitHandlerFactory', () => {
     appHash = Buffer.alloc(0);
 
     const blockchainState = new BlockchainState(blockHeight, appHash);
-    identityState = new IdentityState();
+    uncommittedIdentities = new UncommittedIdentities();
 
     driveUpdateStateClientMock = new UpdateStatePromiseClientMock(this.sinon);
 
@@ -51,7 +51,7 @@ describe('commitHandlerFactory', () => {
       driveUpdateStateClientMock,
       blockchainState,
       blockchainStateRepositoryMock,
-      identityState,
+      uncommittedIdentities,
       identityRepositoryMock,
     );
   });
@@ -82,7 +82,7 @@ describe('commitHandlerFactory', () => {
   });
 
   it('should store identity if identityModel is presented', async () => {
-    identityState.addIdentityModel(identityModelMock);
+    uncommittedIdentities.addIdentityModel(identityModelMock);
 
     await commitHandler();
 
