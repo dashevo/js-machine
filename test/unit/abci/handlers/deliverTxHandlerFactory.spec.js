@@ -13,13 +13,12 @@ const DashPlatformProtocol = require('@dashevo/dpp');
 const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
 const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
+const getIdentityCreateSTFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture');
+const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFixture');
 const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
-const IdentityModel = require('@dashevo/dpp/lib/identity/model/IdentityModel');
 
 const deliverTxHandlerFactory = require('../../../../lib/abci/handlers/deliverTxHandlerFactory');
 const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateStatePromiseClientMock');
-
-const BlockchainState = require('../../../../lib/state/BlockchainState');
 
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
@@ -28,38 +27,64 @@ describe('deliverTxHandlerFactory', () => {
   let deliverTxHandler;
   let driveUpdateStateClient;
   let request;
+  let identityRequest;
   let blockHeight;
   let blockHash;
   let dppMock;
-  let blockchainState;
+  let blockchainStateMock;
+  let createIdentityStateTransitionFixture;
   let stateTransitionFixture;
   let uncommittedIdentitiesMock;
+  let identityFixture;
 
   beforeEach(function beforeEach() {
     const dpp = new DashPlatformProtocol();
     const dataContractFixture = getDataContractFixture();
-    uncommittedIdentitiesMock = {
-      setIdentityModel: this.sinon.stub(),
-    };
+
+    identityFixture = getIdentityFixture();
+    createIdentityStateTransitionFixture = getIdentityCreateSTFixture();
+
     stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
+
+    uncommittedIdentitiesMock = {
+      addIdentity: this.sinon.stub(),
+    };
 
     request = {
       tx: stateTransitionFixture.serialize(),
     };
 
+    identityRequest = {
+      tx: createIdentityStateTransitionFixture.serialize(),
+    };
+
     dppMock = createDPPMock(this.sinon);
-    dppMock.stateTransition.createFromSerialized.resolves(stateTransitionFixture);
+    dppMock
+      .stateTransition
+      .createFromSerialized
+      .resolves(stateTransitionFixture);
+    dppMock
+      .stateTransition
+      .createFromSerialized
+      .withArgs(createIdentityStateTransitionFixture.serialize())
+      .resolves(createIdentityStateTransitionFixture);
+
+    dppMock.identity.create.returns({
+      applyStateTransition: this.sinon.stub().returns(identityFixture),
+    });
 
     blockHeight = 1;
     blockHash = Buffer.alloc(0);
 
-    blockchainState = new BlockchainState(blockHeight);
+    blockchainStateMock = {
+      getLastBlockHeight: this.sinon.stub().returns(blockHeight),
+    };
     driveUpdateStateClient = new UpdateStatePromiseClientMock(this.sinon);
 
     deliverTxHandler = deliverTxHandlerFactory(
       dppMock,
       driveUpdateStateClient,
-      blockchainState,
+      blockchainStateMock,
       uncommittedIdentitiesMock,
     );
   });
@@ -83,7 +108,7 @@ describe('deliverTxHandlerFactory', () => {
       applyStateTransitionRequest,
     );
 
-    expect(uncommittedIdentitiesMock.setIdentityModel).to.be.not.called();
+    expect(uncommittedIdentitiesMock.addIdentity).to.be.not.called();
   });
 
   it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
@@ -102,7 +127,7 @@ describe('deliverTxHandlerFactory', () => {
     const consensusError = new ConsensusError('Invalid state transition');
     const error = new InvalidStateTransitionError(
       [consensusError],
-      stateTransitionFixture.toJSON(),
+      createIdentityStateTransitionFixture.toJSON(),
     );
 
     dppMock.stateTransition.createFromSerialized.throws(error);
@@ -134,14 +159,10 @@ describe('deliverTxHandlerFactory', () => {
     }
   });
 
-  it.skip('should set identity model if ST has IDENTITY_CREATE type', async () => {
-    // @TODO implement state transition fixture with IDENTITY_CREATE type
-    await deliverTxHandler(request);
+  it('should set identity model if ST has IDENTITY_CREATE type', async () => {
+    await deliverTxHandler(identityRequest);
 
-    const identityModel = new IdentityModel();
-    identityModel.applyStateTransition(stateTransitionFixture);
-
-    expect(uncommittedIdentitiesMock.setIdentityModel).to.be.calledWith(identityModel);
+    expect(uncommittedIdentitiesMock.addIdentity).to.be.calledWith(identityFixture);
     expect(driveUpdateStateClient.applyStateTransition).to.be.not.called();
   });
 });

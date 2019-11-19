@@ -24,7 +24,7 @@ describe('commitHandlerFactory', () => {
   let appHash;
   let blockchainStateRepositoryMock;
   let identityRepositoryMock;
-  let identityModelMock;
+  let identityMock;
   let uncommittedIdentities;
 
   beforeEach(function beforeEach() {
@@ -45,7 +45,7 @@ describe('commitHandlerFactory', () => {
       store: this.sinon.stub(),
     };
 
-    identityModelMock = this.sinon.stub();
+    identityMock = this.sinon.stub();
 
     commitHandler = commitHandlerFactory(
       driveUpdateStateClientMock,
@@ -81,11 +81,11 @@ describe('commitHandlerFactory', () => {
     expect(identityRepositoryMock.store).to.be.not.called();
   });
 
-  it('should store identity if identityModel is presented', async () => {
-    uncommittedIdentities.addIdentityModel(identityModelMock);
+  it('should store identity if it is presented', async () => {
+    uncommittedIdentities.addIdentity(identityMock);
 
     await commitHandler();
 
-    expect(identityRepositoryMock.store).to.be.calledOnceWith([identityModelMock]);
+    expect(identityRepositoryMock.store).to.be.calledOnceWith([identityMock]);
   });
 });

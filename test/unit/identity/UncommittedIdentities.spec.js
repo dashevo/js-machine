@@ -2,38 +2,38 @@ const UncommittedIdentities = require('../../../lib/identity/UncommittedIdentiti
 
 describe('UncommittedIdentities', () => {
   let uncommittedIdentities;
-  let identityModelMock;
+  let identityMock;
 
   beforeEach(function beforeEach() {
     uncommittedIdentities = new UncommittedIdentities();
-    identityModelMock = this.sinon.stub();
+    identityMock = this.sinon.stub();
   });
 
   it('should set identity', async () => {
-    uncommittedIdentities.addIdentityModel(identityModelMock);
-    uncommittedIdentities.addIdentityModel(identityModelMock);
+    uncommittedIdentities.addIdentity(identityMock);
+    uncommittedIdentities.addIdentity(identityMock);
 
-    expect(uncommittedIdentities.identityModels).to.have.lengthOf(2);
-    expect(uncommittedIdentities.identityModels[0]).to.deep.equal(identityModelMock);
-    expect(uncommittedIdentities.identityModels[1]).to.deep.equal(identityModelMock);
+    expect(uncommittedIdentities.identities).to.have.lengthOf(2);
+    expect(uncommittedIdentities.identities[0]).to.deep.equal(identityMock);
+    expect(uncommittedIdentities.identities[1]).to.deep.equal(identityMock);
   });
 
   it('should return identity', async () => {
-    uncommittedIdentities.addIdentityModel(identityModelMock);
+    uncommittedIdentities.addIdentity(identityMock);
 
-    const returnedIdentityModel = uncommittedIdentities.getIdentityModels();
+    const returnedIdentity = uncommittedIdentities.getIdentities();
 
-    expect(returnedIdentityModel).to.deep.equal([identityModelMock]);
+    expect(returnedIdentity).to.deep.equal([identityMock]);
   });
 
   it('should reset identity', async () => {
-    uncommittedIdentities.addIdentityModel(identityModelMock);
+    uncommittedIdentities.addIdentity(identityMock);
 
-    expect(uncommittedIdentities.identityModels).to.have.lengthOf(1);
-    expect(uncommittedIdentities.identityModels[0]).to.deep.equal(identityModelMock);
+    expect(uncommittedIdentities.identities).to.have.lengthOf(1);
+    expect(uncommittedIdentities.identities[0]).to.deep.equal(identityMock);
 
     uncommittedIdentities.reset();
 
-    expect(uncommittedIdentities.identityModels).to.have.lengthOf(0);
+    expect(uncommittedIdentities.identities).to.have.lengthOf(0);
   });
 });

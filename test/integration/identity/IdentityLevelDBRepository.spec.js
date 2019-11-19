@@ -1,7 +1,7 @@
 const level = require('level-rocksdb');
 const cbor = require('cbor');
 
-const IdentityModel = require('@dashevo/dpp/lib/identity/model/IdentityModel');
+const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFixture');
 
 const IdentityLevelDBRepository = require('../../../lib/identity/IdentityLevelDBRepository');
 const InvalidIdentityIdError = require('../../../lib/identity/errors/InvalidIdentityIdError');
@@ -9,8 +9,7 @@ const InvalidIdentityIdError = require('../../../lib/identity/errors/InvalidIden
 describe('IdentityLevelDBRepository', () => {
   let db;
   let repository;
-  let identityModel;
-  let id;
+  let identity;
   let key;
 
   beforeEach(() => {
@@ -18,13 +17,9 @@ describe('IdentityLevelDBRepository', () => {
 
     repository = new IdentityLevelDBRepository(db);
 
-    id = 'testId';
-    key = `${IdentityLevelDBRepository.KEY_NAME}:${id}`;
+    identity = getIdentityFixture();
 
-    identityModel = new IdentityModel({
-      id,
-      publicKey: 'testPublicKey',
-    });
+    key = `${IdentityLevelDBRepository.KEY_NAME}:${identity.getId()}`;
   });
 
   afterEach(async () => {
@@ -34,7 +29,7 @@ describe('IdentityLevelDBRepository', () => {
 
   describe('#store', () => {
     it('should store identity', async () => {
-      const repositoryInstance = await repository.store([identityModel]);
+      const repositoryInstance = await repository.store([identity]);
 
       expect(repositoryInstance).to.equal(repository);
 
@@ -44,13 +39,13 @@ describe('IdentityLevelDBRepository', () => {
 
       const storedIdentity = cbor.decode(storedIdentityBuffer);
 
-      expect(storedIdentity).to.deep.equal(identityModel.toJSON());
+      expect(storedIdentity).to.deep.equal(identity.toJSON());
     });
   });
 
   describe('#fetch', () => {
     it('should return null if identity was not found', async () => {
-      await repository.store([identityModel]);
+      await repository.store([identity]);
 
       const storedState = await repository.fetch('nonExistingId');
 
@@ -58,16 +53,16 @@ describe('IdentityLevelDBRepository', () => {
     });
 
     it('should return stored identity', async () => {
-      const identityBufferToStore = cbor.encode(identityModel.toJSON());
+      const identityBufferToStore = cbor.encode(identity.toJSON());
 
       await db.put(key, identityBufferToStore);
 
-      const storedIdentityBuffer = await repository.fetch(id);
+      const storedIdentityBuffer = await repository.fetch(identity.getId());
       expect(storedIdentityBuffer).to.be.instanceOf(Buffer);
 
       const storedIdentity = cbor.decode(storedIdentityBuffer);
 
-      expect(storedIdentity).to.deep.equal(identityModel.toJSON());
+      expect(storedIdentity).to.deep.equal(identity.toJSON());
     });
 
     it('should throw InvalidIdentityIdError if id is not defined', async () => {

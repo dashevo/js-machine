@@ -1,6 +1,6 @@
 const cbor = require('cbor');
 
-const IdentityModel = require('@dashevo/dpp/lib/identity/model/IdentityModel');
+const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFixture');
 
 const queryHandlerFactory = require('../../../../lib/abci/handlers/queryHandlerFactory');
 const InvalidIdentityIdError = require('../../../../lib/identity/errors/InvalidIdentityIdError');
@@ -11,30 +11,25 @@ const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArg
 describe('queryHandlerFactory', () => {
   let queryHandler;
   let identityRepositoryMock;
-  let identityModel;
+  let identity;
   let request;
   let identityEncoded;
 
   beforeEach(function beforeEach() {
-    const id = 'testId';
+    identity = getIdentityFixture();
 
     request = {
       path: '/identity',
-      data: Buffer.from(id),
+      data: Buffer.from(identity.getId()),
     };
 
-    identityModel = new IdentityModel({
-      id,
-      publicKey: 'testPublicKey',
-    });
-
-    identityEncoded = cbor.encode(identityModel.toJSON());
+    identityEncoded = cbor.encode(identity.toJSON());
 
     identityRepositoryMock = {
       fetch: this.sinon.stub(),
     };
 
-    identityRepositoryMock.fetch.withArgs(id).resolves(identityEncoded);
+    identityRepositoryMock.fetch.withArgs(identity.getId()).resolves(identityEncoded);
     identityRepositoryMock.fetch.withArgs('unknownId').resolves(null);
     identityRepositoryMock.fetch.withArgs(null).throws(new InvalidIdentityIdError(null));
 
