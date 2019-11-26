@@ -36,11 +36,14 @@ describe('deliverTxHandlerFactory', () => {
   let stateTransitionFixture;
   let identityRepositoryMock;
   let identityFixture;
+  let blockExecutionDBTransactionsMock;
+  let dbTransaction;
+  let dpp;
 
   beforeEach(function beforeEach() {
-    const dpp = new DashPlatformProtocol();
     const dataContractFixture = getDataContractFixture();
 
+    dpp = new DashPlatformProtocol();
     identityFixture = getIdentityFixture();
     createIdentityStateTransitionFixture = getIdentityCreateSTFixture();
 
@@ -69,6 +72,12 @@ describe('deliverTxHandlerFactory', () => {
       .createFromSerialized
       .withArgs(createIdentityStateTransitionFixture.serialize())
       .resolves(createIdentityStateTransitionFixture);
+    dppMock
+      .stateTransition
+      .validateData
+      .resolves({
+        isValid: this.sinon.stub().returns(true),
+      });
 
     dppMock.identity.applyStateTransition = this.sinon.stub().returns(identityFixture);
 
@@ -80,11 +89,18 @@ describe('deliverTxHandlerFactory', () => {
     };
     driveUpdateStateClient = new UpdateStatePromiseClientMock(this.sinon);
 
+    dbTransaction = this.sinon.stub();
+
+    blockExecutionDBTransactionsMock = {
+      getIdentityTransaction: this.sinon.stub().returns(dbTransaction),
+    };
+
     deliverTxHandler = deliverTxHandlerFactory(
       dppMock,
       driveUpdateStateClient,
       blockchainStateMock,
       identityRepositoryMock,
+      blockExecutionDBTransactionsMock,
     );
   });
 
@@ -162,11 +178,49 @@ describe('deliverTxHandlerFactory', () => {
   it('should set identity model if ST has IDENTITY_CREATE type', async () => {
     await deliverTxHandler(identityRequest);
 
-    expect(identityRepositoryMock.store).to.be.calledWithExactly(identityFixture);
+    expect(identityRepositoryMock.store).to.be.calledWithExactly(identityFixture, dbTransaction);
     expect(identityRepositoryMock.fetch).to.be.calledWithExactly(
       createIdentityStateTransitionFixture.getIdentityId(),
-      true,
+      dbTransaction,
     );
     expect(driveUpdateStateClient.applyStateTransition).to.be.not.called();
+  });
+
+  it('should throw an error on invalid data in identity state transition', async function it() {
+    dppMock
+      .stateTransition
+      .validateData
+      .resolves({
+        isValid: this.sinon.stub().returns(false),
+        getErrors: this.sinon.stub(),
+      });
+
+    try {
+      await deliverTxHandler(identityRequest);
+
+      expect.fail('should throw an error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
+      expect(e.getMessage()).to.equal('Invalid argument: Invalid State Transition data');
+      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+    }
+  });
+
+  it('should throw an error with unknown state transition type', async function it() {
+    stateTransitionFixture.getType = this.sinon.stub().returns(42);
+
+    request = {
+      tx: stateTransitionFixture.serialize(),
+    };
+
+    try {
+      await deliverTxHandler(request);
+
+      expect.fail('should throw an error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
+      expect(e.getMessage()).to.equal('Invalid argument: Unknown State Transition');
+      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+    }
   });
 });

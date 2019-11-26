@@ -20,19 +20,30 @@ describe('beginBlockHandlerFactory', () => {
   let driveUpdateStateClientMock;
   let blockHeight;
   let identityRepositoryMock;
+  let blockExecutionDBTransactionsMock;
+  let identityTransaction;
 
   beforeEach(function beforeEach() {
     blockchainState = new BlockchainState();
     driveUpdateStateClientMock = new UpdateStatePromiseClientMock(this.sinon);
 
-    identityRepositoryMock = {
+    identityTransaction = {
       startTransaction: this.sinon.stub(),
+    };
+
+    identityRepositoryMock = {
+      createTransaction: this.sinon.stub().returns(identityTransaction),
+    };
+
+    blockExecutionDBTransactionsMock = {
+      setIdentityTransaction: this.sinon.stub(),
     };
 
     beginBlockHandler = beginBlockHandlerFactory(
       driveUpdateStateClientMock,
       blockchainState,
       identityRepositoryMock,
+      blockExecutionDBTransactionsMock,
     );
 
     blockHeight = 2;
@@ -58,6 +69,10 @@ describe('beginBlockHandlerFactory', () => {
       startTransactionRequest,
     );
 
-    expect(identityRepositoryMock.startTransaction).to.be.calledOnce();
+    expect(identityRepositoryMock.createTransaction).to.be.calledOnce();
+
+    expect(identityTransaction.startTransaction).to.be.calledOnce();
+
+    expect(blockExecutionDBTransactionsMock.setIdentityTransaction).to.be.calledOnce();
   });
 });
