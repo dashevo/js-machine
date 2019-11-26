@@ -73,7 +73,7 @@ describe('queryHandlerFactory', () => {
   });
 
   it('should throw InvalidArgumentAbciError error if id is not defined', async () => {
-    request.data.id = undefined;
+    request.data = cbor.encode({});
 
     try {
       await queryHandler(request);
@@ -81,7 +81,7 @@ describe('queryHandlerFactory', () => {
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
       expect(e).to.be.instanceOf(InvalidArgumentAbciError);
-      expect(e.getMessage()).to.equal('Invalid argument: Data is not specified');
+      expect(e.getMessage()).to.equal('Invalid argument: Id is not specified');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
     }
   });

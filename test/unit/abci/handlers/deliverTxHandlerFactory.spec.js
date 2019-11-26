@@ -70,9 +70,7 @@ describe('deliverTxHandlerFactory', () => {
       .withArgs(createIdentityStateTransitionFixture.serialize())
       .resolves(createIdentityStateTransitionFixture);
 
-    dppMock.identity.create.returns({
-      applyStateTransition: this.sinon.stub().returns(identityFixture),
-    });
+    dppMock.identity.applyStateTransition = this.sinon.stub().returns(identityFixture);
 
     blockHeight = 1;
     blockHash = Buffer.alloc(0);
@@ -161,12 +159,12 @@ describe('deliverTxHandlerFactory', () => {
     }
   });
 
-  it.skip('should set identity model if ST has IDENTITY_CREATE type', async () => {
+  it('should set identity model if ST has IDENTITY_CREATE type', async () => {
     await deliverTxHandler(identityRequest);
 
     expect(identityRepositoryMock.store).to.be.calledWithExactly(identityFixture);
     expect(identityRepositoryMock.fetch).to.be.calledWithExactly(
-      stateTransitionFixture.getIdentityId(),
+      createIdentityStateTransitionFixture.getIdentityId(),
       true,
     );
     expect(driveUpdateStateClient.applyStateTransition).to.be.not.called();
