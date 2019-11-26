@@ -20,7 +20,9 @@ describe('queryHandlerFactory', () => {
 
     request = {
       path: '/identity',
-      data: Buffer.from(identity.getId()),
+      data: cbor.encode({
+        id: identity.getId(),
+      }),
     };
 
     identityEncoded = cbor.encode(identity.toJSON());
@@ -45,7 +47,9 @@ describe('queryHandlerFactory', () => {
   });
 
   it('should return null if id not found', async () => {
-    request.data = Buffer.from('unknownId');
+    request.data = cbor.encode({
+      id: 'unknownId',
+    });
 
     const response = await queryHandler(request);
 
@@ -54,8 +58,8 @@ describe('queryHandlerFactory', () => {
     expect(response.value).to.equal(null);
   });
 
-  it('should throw InvalidArgumentAbciError error if id is not defined', async () => {
-    request.data = null;
+  it('should throw InvalidArgumentAbciError error if data is not defined', async () => {
+    request.data = undefined;
 
     try {
       await queryHandler(request);
@@ -68,7 +72,35 @@ describe('queryHandlerFactory', () => {
     }
   });
 
-  it('should return error if type is wrong', async () => {
+  it('should throw InvalidArgumentAbciError error if id is not defined', async () => {
+    request.data.id = undefined;
+
+    try {
+      await queryHandler(request);
+
+      expect.fail('should throw InvalidArgumentAbciError error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
+      expect(e.getMessage()).to.equal('Invalid argument: Data is not specified');
+      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+    }
+  });
+
+  it('should throw InvalidArgumentAbciError error if data is not in cbor', async () => {
+    request.data = Buffer.from('someData');
+
+    try {
+      await queryHandler(request);
+
+      expect.fail('should throw InvalidArgumentAbciError error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
+      expect(e.getMessage()).to.equal('Invalid argument: Data has wrong format');
+      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+    }
+  });
+
+  it('should return error if path is wrong', async () => {
     request.path = '/wrongPath';
 
     try {

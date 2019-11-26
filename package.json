@@ -52,6 +52,7 @@
     "dotenv-safe": "^8.1.0",
     "jayson": "^3.1.1",
     "level-rocksdb": "^4.0.0",
+    "level-transactions": "^2.1.4",
     "lru-cache": "^5.1.1"
   }
 }

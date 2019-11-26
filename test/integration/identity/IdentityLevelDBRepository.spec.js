@@ -2,22 +2,32 @@ const level = require('level-rocksdb');
 const cbor = require('cbor');
 
 const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFixture');
+const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
 
 const IdentityLevelDBRepository = require('../../../lib/identity/IdentityLevelDBRepository');
 const InvalidIdentityIdError = require('../../../lib/identity/errors/InvalidIdentityIdError');
+const LevelDBTransactionIsNotStartedError = require('../../../lib/identity/errors/LevelDBTransactionIsNotStartedError');
+const LevelDBTransactionIsAlreadyStartedError = require('../../../lib/identity/errors/LevelDBTransactionIsAlreadyStartedError');
 
 describe('IdentityLevelDBRepository', () => {
   let db;
   let repository;
   let identity;
   let key;
+  let dppMock;
 
-  beforeEach(() => {
+  beforeEach(function beforeEach() {
     db = level('./db/identity-test', { valueEncoding: 'binary' });
 
-    repository = new IdentityLevelDBRepository(db);
-
     identity = getIdentityFixture();
+
+    dppMock = createDPPMock(this.sinon);
+    dppMock
+      .identity
+      .createFromSerialized
+      .resolves(identity);
+
+    repository = new IdentityLevelDBRepository(db, dppMock);
 
     key = `${IdentityLevelDBRepository.KEY_NAME}:${identity.getId()}`;
   });
@@ -28,10 +38,14 @@ describe('IdentityLevelDBRepository', () => {
   });
 
   describe('#store', () => {
-    it('should store identity', async () => {
-      const repositoryInstance = await repository.store([identity]);
+    it('should store identity in transaction', async () => {
+      const repositoryInstance = await repository
+        .startTransaction()
+        .store(identity);
 
       expect(repositoryInstance).to.equal(repository);
+
+      await repository.commit();
 
       const storedIdentityBuffer = await db.get(key);
 
@@ -45,24 +59,21 @@ describe('IdentityLevelDBRepository', () => {
 
   describe('#fetch', () => {
     it('should return null if identity was not found', async () => {
-      await repository.store([identity]);
+      repository.startTransaction();
+      await repository.store(identity);
+      await repository.commit();
 
-      const storedState = await repository.fetch('nonExistingId');
+      const storedIdentity = await repository.fetch('nonExistingId');
 
-      expect(storedState).to.be.null();
+      expect(storedIdentity).to.be.null();
     });
 
     it('should return stored identity', async () => {
-      const identityBufferToStore = cbor.encode(identity.toJSON());
+      await db.put(key, identity.serialize());
 
-      await db.put(key, identityBufferToStore);
+      const storedIdentity = await repository.fetch(identity.getId());
 
-      const storedIdentityBuffer = await repository.fetch(identity.getId());
-      expect(storedIdentityBuffer).to.be.instanceOf(Buffer);
-
-      const storedIdentity = cbor.decode(storedIdentityBuffer);
-
-      expect(storedIdentity).to.deep.equal(identity.toJSON());
+      expect(storedIdentity.toJSON()).to.deep.equal(identity.toJSON());
     });
 
     it('should throw InvalidIdentityIdError if id is not defined', async () => {
@@ -84,6 +95,68 @@ describe('IdentityLevelDBRepository', () => {
       } catch (e) {
         expect(e).to.be.instanceOf(InvalidIdentityIdError);
         expect(e.getId()).to.deep.equal({});
+      }
+    });
+
+    it('should not return uncommitted data on fetch without transaction', async () => {
+      repository.startTransaction();
+      await repository.store(identity);
+
+      const storedIdentity = await repository.fetch(identity.getId());
+
+      expect(storedIdentity).to.be.null();
+    });
+
+    it('should return uncommitted data on fetch with transaction', async () => {
+      repository.startTransaction();
+      await repository.store(identity);
+
+      const storedIdentity = await repository.fetch(identity.getId(), true);
+
+      expect(storedIdentity.toJSON()).to.deep.equal(identity.toJSON());
+    });
+  });
+
+  describe('transaction', () => {
+    it('should fail if transaction was started twice', async () => {
+      repository.startTransaction();
+
+      try {
+        repository.startTransaction();
+
+        expect.fail('Should throw an LevelDBTransactionIsAlreadyStartedError error');
+      } catch (e) {
+        expect(e).to.be.instanceOf(LevelDBTransactionIsAlreadyStartedError);
+      }
+    });
+
+    it('should fail on fetch with transaction if transaction is not started', async () => {
+      try {
+        await repository.fetch(identity.getId(), true);
+
+        expect.fail('Should throw an LevelDBTransactionIsNotStartedError error');
+      } catch (e) {
+        expect(e).to.be.instanceOf(LevelDBTransactionIsNotStartedError);
+      }
+    });
+
+    it('should fail on store if transaction is not started', async () => {
+      try {
+        await repository.store(identity);
+
+        expect.fail('Should throw an LevelDBTransactionIsNotStartedError error');
+      } catch (e) {
+        expect(e).to.be.instanceOf(LevelDBTransactionIsNotStartedError);
+      }
+    });
+
+    it('should fail on commit if transaction is not started', async () => {
+      try {
+        await repository.commit();
+
+        expect.fail('Should throw an LevelDBTransactionIsNotStartedError error');
+      } catch (e) {
+        expect(e).to.be.instanceOf(LevelDBTransactionIsNotStartedError);
       }
     });
   });

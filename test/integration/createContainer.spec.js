@@ -30,6 +30,7 @@ describe('createDIContainer', () => {
       expect(abciHandlers).to.have.property('deliverTx');
       expect(abciHandlers).to.have.property('commit');
       expect(abciHandlers).to.have.property('query');
+      expect(abciHandlers).to.have.property('endBlock');
     });
   });
 });

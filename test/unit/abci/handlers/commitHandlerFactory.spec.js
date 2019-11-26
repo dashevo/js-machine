@@ -14,8 +14,6 @@ const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateSt
 
 const BlockchainState = require('../../../../lib/state/BlockchainState');
 
-const UncommittedIdentities = require('../../../../lib/identity/UncommittedIdentities');
-
 describe('commitHandlerFactory', () => {
   let commitHandler;
   let driveUpdateStateClientMock;
@@ -24,8 +22,6 @@ describe('commitHandlerFactory', () => {
   let appHash;
   let blockchainStateRepositoryMock;
   let identityRepositoryMock;
-  let identityMock;
-  let uncommittedIdentities;
 
   beforeEach(function beforeEach() {
     blockHeight = 2;
@@ -33,7 +29,6 @@ describe('commitHandlerFactory', () => {
     appHash = Buffer.alloc(0);
 
     const blockchainState = new BlockchainState(blockHeight, appHash);
-    uncommittedIdentities = new UncommittedIdentities();
 
     driveUpdateStateClientMock = new UpdateStatePromiseClientMock(this.sinon);
 
@@ -42,16 +37,13 @@ describe('commitHandlerFactory', () => {
     };
 
     identityRepositoryMock = {
-      store: this.sinon.stub(),
+      commit: this.sinon.stub(),
     };
-
-    identityMock = this.sinon.stub();
 
     commitHandler = commitHandlerFactory(
       driveUpdateStateClientMock,
       blockchainState,
       blockchainStateRepositoryMock,
-      uncommittedIdentities,
       identityRepositoryMock,
     );
   });
@@ -78,14 +70,6 @@ describe('commitHandlerFactory', () => {
     expect(blockchainState.getLastBlockHeight()).to.equal(blockHeight);
     expect(blockchainState.getLastBlockAppHash()).to.deep.equal(appHash);
 
-    expect(identityRepositoryMock.store).to.be.not.called();
-  });
-
-  it('should store identity if it is presented', async () => {
-    uncommittedIdentities.addIdentity(identityMock);
-
-    await commitHandler();
-
-    expect(identityRepositoryMock.store).to.be.calledOnceWith([identityMock]);
+    expect(identityRepositoryMock.commit).to.be.calledOnce();
   });
 });
