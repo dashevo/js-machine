@@ -21,7 +21,7 @@ describe('BlockExecutionDBTransactions', () => {
     const { transactions } = blockExecutionDBTransactions;
 
     expect(transactions).to.deep.equal({
-      identityTransaction: identityTransactionMock,
+      identity: identityTransactionMock,
     });
   });
 
