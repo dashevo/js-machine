@@ -8,17 +8,17 @@ const LevelDBTransactionIsNotStartedError = require('../../../lib/levelDb/errors
 const LevelDBTransactionIsAlreadyStartedError = require('../../../lib/levelDb/errors/LevelDBTransactionIsAlreadyStartedError');
 
 describe('LevelDBTransaction', () => {
-  let db;
+  let dbMock;
   let levelDBTransaction;
 
   beforeEach(() => {
-    db = levelup(memdown());
-    levelDBTransaction = new LevelDBTransaction(db);
+    dbMock = levelup(memdown());
+    levelDBTransaction = new LevelDBTransaction(dbMock);
   });
 
   afterEach(async () => {
-    await db.clear();
-    await db.close();
+    await dbMock.clear();
+    await dbMock.close();
   });
 
   it('should start transaction', () => {
