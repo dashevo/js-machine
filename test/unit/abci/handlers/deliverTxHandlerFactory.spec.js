@@ -178,6 +178,9 @@ describe('deliverTxHandlerFactory', () => {
   it('should set identity model if ST has IDENTITY_CREATE type', async () => {
     await deliverTxHandler(identityRequest);
 
+    expect(dppMock.stateTransition.validateData).to.be.calledOnceWithExactly(
+      createIdentityStateTransitionFixture,
+    );
     expect(identityRepositoryMock.store).to.be.calledWithExactly(identityFixture, dbTransaction);
     expect(identityRepositoryMock.fetch).to.be.calledWithExactly(
       createIdentityStateTransitionFixture.getIdentityId(),
@@ -201,7 +204,7 @@ describe('deliverTxHandlerFactory', () => {
       expect.fail('should throw an error');
     } catch (e) {
       expect(e).to.be.instanceOf(InvalidArgumentAbciError);
-      expect(e.getMessage()).to.equal('Invalid argument: Invalid State Transition data');
+      expect(e.getMessage()).to.equal('Invalid argument: Invalid Identity Create Transition');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
     }
   });

@@ -71,8 +71,8 @@ describe('beginBlockHandlerFactory', () => {
 
     expect(identityRepositoryMock.createTransaction).to.be.calledOnce();
 
-    expect(identityTransaction.startTransaction).to.be.calledOnce();
-
-    expect(blockExecutionDBTransactionsMock.setIdentityTransaction).to.be.calledOnce();
+    expect(blockExecutionDBTransactionsMock.setIdentityTransaction).to.be.calledOnceWithExactly(
+      identityTransaction,
+    );
   });
 });
