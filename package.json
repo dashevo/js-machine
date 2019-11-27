@@ -45,7 +45,7 @@
     "sinon-chai": "^3.3.0"
   },
   "dependencies": {
-    "@dashevo/dpp": "github:dashevo/js-dpp#identity-create-st",
+    "@dashevo/dpp": "^0.10.0-dev.1",
     "@dashevo/drive-grpc": "^0.3.0",
     "abci": "^5.0.1",
     "awilix": "^4.2.2",
