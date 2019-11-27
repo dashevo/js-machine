@@ -1,6 +1,6 @@
 {
   "name": "@dashevo/machine-abci",
-  "version": "0.2.0",
+  "version": "0.3.0-dev.1",
   "description": "Dash Platform State Machine",
   "engines": {
     "node": ">=8"
@@ -36,6 +36,8 @@
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.2",
+    "levelup": "^4.3.2",
+    "memdown": "^5.1.0",
     "mocha": "^6.2.1",
     "mocha-sinon": "^2.1.0",
     "nyc": "^14.1.1",
@@ -43,7 +45,7 @@
     "sinon-chai": "^3.3.0"
   },
   "dependencies": {
-    "@dashevo/dpp": "^0.9.0",
+    "@dashevo/dpp": "^0.10.0-dev.1",
     "@dashevo/drive-grpc": "^0.3.0",
     "abci": "^5.0.1",
     "awilix": "^4.2.2",
@@ -52,6 +54,7 @@
     "dotenv-safe": "^8.1.0",
     "jayson": "^3.1.1",
     "level-rocksdb": "^4.0.0",
+    "level-transactions": "^2.1.4",
     "lru-cache": "^5.1.1"
   }
 }
