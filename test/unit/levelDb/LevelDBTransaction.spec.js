@@ -1,4 +1,5 @@
-const level = require('level-rocksdb');
+const levelup = require('levelup');
+const memdown = require('memdown');
 const Transactions = require('level-transactions');
 
 const LevelDBTransaction = require('../../../lib/levelDb/LevelDBTransaction');
@@ -11,8 +12,7 @@ describe('LevelDBTransaction', () => {
   let levelDBTransaction;
 
   beforeEach(() => {
-    db = level('./db/transaction-test', { valueEncoding: 'binary' });
-
+    db = levelup(memdown());
     levelDBTransaction = new LevelDBTransaction(db);
   });
 

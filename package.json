@@ -1,6 +1,6 @@
 {
   "name": "@dashevo/machine-abci",
-  "version": "0.2.1",
+  "version": "0.3.0-dev.1",
   "description": "Dash Platform State Machine",
   "engines": {
     "node": ">=8"
@@ -36,6 +36,8 @@
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.2",
+    "levelup": "^4.3.2",
+    "memdown": "^5.1.0",
     "mocha": "^6.2.1",
     "mocha-sinon": "^2.1.0",
     "nyc": "^14.1.1",
