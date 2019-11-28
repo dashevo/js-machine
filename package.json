@@ -1,6 +1,6 @@
 {
   "name": "@dashevo/machine-abci",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Dash Platform State Machine",
   "engines": {
     "node": ">=8"
@@ -45,6 +45,7 @@
   "dependencies": {
     "@dashevo/dpp": "^0.9.0",
     "@dashevo/drive-grpc": "^0.3.0",
+    "@dashevo/grpc-common": "^0.2.0",
     "abci": "^5.0.1",
     "awilix": "^4.2.2",
     "cbor": "^5.0.1",
