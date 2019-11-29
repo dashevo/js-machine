@@ -40,11 +40,16 @@ describe('DataProvider', () => {
 
       const actualContract = await dataProvider.fetchDataContract(contractId);
 
-      expect(actualContract).to.equal(contract);
+      expect(actualContract.toJSON()).to.deep.equal({
+        $schema: 'https://schema.dash.org/dpp-0-4-0/meta/data-contract',
+        version: 1,
+        contractId: undefined,
+        documents: undefined,
+      });
 
-      expect(contractCacheMock.get).to.be.calledOnceWith(contractId);
+      expect(contractCacheMock.get).to.be.calledOnceWithExactly(contractId);
       expect(driveApiClientMock.request).to.be.calledOnceWithExactly('fetchContract', { contractId });
-      expect(contractCacheMock.set).to.be.calledOnceWith(contractId, contract);
+      expect(contractCacheMock.set).to.be.calledOnceWithExactly(contractId, actualContract);
     });
   });
 });
