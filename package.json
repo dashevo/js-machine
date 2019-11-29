@@ -43,7 +43,7 @@
     "sinon-chai": "^3.3.0"
   },
   "dependencies": {
-    "@dashevo/dpp": "^0.9.0",
+    "@dashevo/dpp": "^0.10.0-dev.3",
     "@dashevo/drive-grpc": "^0.3.0",
     "abci": "^5.0.1",
     "awilix": "^4.2.2",
