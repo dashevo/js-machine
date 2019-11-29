@@ -1,5 +1,3 @@
-const cbor = require('cbor');
-
 const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFixture');
 
 const queryHandlerFactory = require('../../../../lib/abci/handlers/queryHandlerFactory');
@@ -13,25 +11,20 @@ describe('queryHandlerFactory', () => {
   let identityRepositoryMock;
   let identity;
   let request;
-  let identityEncoded;
 
   beforeEach(function beforeEach() {
     identity = getIdentityFixture();
 
     request = {
       path: '/identity',
-      data: cbor.encode({
-        id: identity.getId(),
-      }),
+      data: [...Buffer.from(identity.getId())],
     };
-
-    identityEncoded = cbor.encode(identity.toJSON());
 
     identityRepositoryMock = {
       fetch: this.sinon.stub(),
     };
 
-    identityRepositoryMock.fetch.withArgs(identity.getId()).resolves(identityEncoded);
+    identityRepositoryMock.fetch.withArgs(identity.getId()).resolves(identity);
     identityRepositoryMock.fetch.withArgs('unknownId').resolves(null);
     identityRepositoryMock.fetch.withArgs(null).throws(new InvalidIdentityIdError(null));
 
@@ -43,19 +36,22 @@ describe('queryHandlerFactory', () => {
 
     expect(response).to.be.an.instanceOf(Object);
     expect(response.code).to.equal(0);
-    expect(response.value).to.deep.equal(identityEncoded);
+    expect(response.value).to.deep.equal(identity.serialize());
+
+    expect(identityRepositoryMock.fetch).to.be.calledOnceWithExactly(identity.getId());
   });
 
   it('should return null if id not found', async () => {
-    request.data = cbor.encode({
-      id: 'unknownId',
-    });
+    const id = 'unknownId';
+    request.data = [...Buffer.from(id)];
 
     const response = await queryHandler(request);
 
     expect(response).to.be.an.instanceOf(Object);
     expect(response.code).to.equal(0);
     expect(response.value).to.equal(null);
+
+    expect(identityRepositoryMock.fetch).to.be.calledOnceWithExactly(id);
   });
 
   it('should throw InvalidArgumentAbciError error if data is not defined', async () => {
@@ -69,34 +65,8 @@ describe('queryHandlerFactory', () => {
       expect(e).to.be.instanceOf(InvalidArgumentAbciError);
       expect(e.getMessage()).to.equal('Invalid argument: Data is not specified');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
-    }
-  });
 
-  it('should throw InvalidArgumentAbciError error if id is not defined', async () => {
-    request.data = cbor.encode({});
-
-    try {
-      await queryHandler(request);
-
-      expect.fail('should throw InvalidArgumentAbciError error');
-    } catch (e) {
-      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
-      expect(e.getMessage()).to.equal('Invalid argument: Id is not specified');
-      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
-    }
-  });
-
-  it('should throw InvalidArgumentAbciError error if data is not in cbor', async () => {
-    request.data = Buffer.from('someData');
-
-    try {
-      await queryHandler(request);
-
-      expect.fail('should throw InvalidArgumentAbciError error');
-    } catch (e) {
-      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
-      expect(e.getMessage()).to.equal('Invalid argument: Data has wrong format');
-      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+      expect(identityRepositoryMock.fetch).to.be.not.called();
     }
   });
 
@@ -111,6 +81,8 @@ describe('queryHandlerFactory', () => {
       expect(e).to.be.instanceOf(InvalidArgumentAbciError);
       expect(e.getMessage()).to.equal('Invalid argument: Invalid path');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+
+      expect(identityRepositoryMock.fetch).to.be.not.called();
     }
   });
 });
