@@ -6,26 +6,33 @@ const {
 
 const DashPlatformProtocol = require('@dashevo/dpp');
 
-const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
-const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
+const getDocumentFixture = require('@dashevo/dpp/lib/test/fixtures/getDocumentsFixture');
+const level = require('level-rocksdb');
+const createDPPMock = require('../../../../lib/test/mock/createDPPMock');
 
 const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHandlerFactory');
 
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
+const BlockchainState = require('../../../../lib/state/BlockchainState');
+const createTendermintRPCClientMock = require('../../../../lib/test/mock/createTendermintRPCClientMock');
 
 describe('checkTxHandlerFactory', () => {
   let checkTxHandler;
   let request;
   let dppMock;
   let stateTransitionFixture;
+  let db;
+  let blockchainState;
+  let lastBlockHeight;
+  let lastBlockAppHash;
 
   beforeEach(function beforeEach() {
     const dpp = new DashPlatformProtocol();
-    const dataContractFixture = getDataContractFixture();
-    stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
+    const documentFixture = getDocumentFixture();
+    stateTransitionFixture = dpp.document.createStateTransition(documentFixture);
 
     request = {
       tx: stateTransitionFixture.serialize(),
@@ -33,11 +40,22 @@ describe('checkTxHandlerFactory', () => {
 
     dppMock = createDPPMock(this.sinon);
 
-    checkTxHandler = checkTxHandlerFactory(dppMock);
+    const tendermintRpcMock = createTendermintRPCClientMock(this.sinon);
+
+    checkTxHandler = checkTxHandlerFactory(dppMock, tendermintRpcMock);
+    db = level('./db/state-test', { valueEncoding: 'binary' });
+    lastBlockHeight = 1;
+    lastBlockAppHash = Buffer.from('something');
+    blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
+  });
+
+  afterEach(async () => {
+    await db.clear();
+    await db.close();
   });
 
   it('should validate State Transition and return response with code 0', async () => {
-    const response = await checkTxHandler(request);
+    const response = await checkTxHandler(request, blockchainState);
 
     expect(response).to.be.an.instanceOf(ResponseCheckTx);
     expect(response.code).to.equal(0);
@@ -47,7 +65,7 @@ describe('checkTxHandlerFactory', () => {
 
   it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
     try {
-      await checkTxHandler({});
+      await checkTxHandler({}, blockchainState);
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
@@ -67,7 +85,7 @@ describe('checkTxHandlerFactory', () => {
     dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
-      await checkTxHandler(request);
+      await checkTxHandler(request, blockchainState);
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
@@ -85,7 +103,7 @@ describe('checkTxHandlerFactory', () => {
     dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
-      await checkTxHandler(request);
+      await checkTxHandler(request, blockchainState);
 
       expect.fail('should throw an error');
     } catch (e) {
