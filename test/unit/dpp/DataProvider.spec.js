@@ -17,33 +17,33 @@ describe('DataProvider', () => {
     };
 
     driveApiClientMock = {
-      fetchContract: this.sinon.stub(),
+      request: this.sinon.stub(),
     };
 
     dataProvider = new DataProvider(driveApiClientMock, contractCacheMock);
   });
 
-  describe('#fetchContract', () => {
+  describe('#fetchDataContract', () => {
     it('should fetch contract from cache', async () => {
       contractCacheMock.get.returns(contract);
 
-      const actualContract = await dataProvider.fetchContract(contractId);
+      const actualContract = await dataProvider.fetchDataContract(contractId);
 
       expect(actualContract).to.equal(contract);
 
       expect(contractCacheMock.get).to.be.calledOnceWith(contractId);
-      expect(driveApiClientMock.fetchContract).to.not.be.called();
+      expect(driveApiClientMock.request).to.not.be.called();
     });
 
     it('should fetch contract from drive if it is not present in cache', async () => {
-      driveApiClientMock.fetchContract.resolves(contract);
+      driveApiClientMock.request.resolves({ result: contract });
 
-      const actualContract = await dataProvider.fetchContract(contractId);
+      const actualContract = await dataProvider.fetchDataContract(contractId);
 
       expect(actualContract).to.equal(contract);
 
       expect(contractCacheMock.get).to.be.calledOnceWith(contractId);
-      expect(driveApiClientMock.fetchContract).to.be.calledOnceWith(contractId);
+      expect(driveApiClientMock.request).to.be.calledOnceWithExactly('fetchContract', { contractId });
       expect(contractCacheMock.set).to.be.calledOnceWith(contractId, contract);
     });
   });
