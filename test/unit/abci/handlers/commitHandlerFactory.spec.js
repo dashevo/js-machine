@@ -21,6 +21,7 @@ describe('commitHandlerFactory', () => {
   let blockHash;
   let appHash;
   let blockchainStateRepositoryMock;
+  let identityRepositoryMock;
 
   beforeEach(function beforeEach() {
     blockHeight = 2;
@@ -35,10 +36,15 @@ describe('commitHandlerFactory', () => {
       store: this.sinon.stub(),
     };
 
+    identityRepositoryMock = {
+      commit: this.sinon.stub(),
+    };
+
     commitHandler = commitHandlerFactory(
       driveUpdateStateClientMock,
       blockchainState,
       blockchainStateRepositoryMock,
+      identityRepositoryMock,
     );
   });
 
@@ -63,5 +69,7 @@ describe('commitHandlerFactory', () => {
     expect(blockchainState).to.be.an.instanceOf(BlockchainState);
     expect(blockchainState.getLastBlockHeight()).to.equal(blockHeight);
     expect(blockchainState.getLastBlockAppHash()).to.deep.equal(appHash);
+
+    expect(identityRepositoryMock.commit).to.be.calledOnce();
   });
 });
