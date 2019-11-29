@@ -10,7 +10,8 @@ const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/er
 const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
 const getDocumentFixture = require('@dashevo/dpp/lib/test/fixtures/getDocumentsFixture');
 const level = require('level-rocksdb');
-const createDPPMock = require('../../../../lib/test/mock/createDPPMock');
+const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
+const DocumentsStateTransition = require('@dashevo/dpp/lib/document/stateTransition/DocumentsStateTransition');
 
 const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHandlerFactory');
 
@@ -39,6 +40,10 @@ describe('checkTxHandlerFactory', () => {
     };
 
     dppMock = createDPPMock(this.sinon);
+    dppMock
+      .stateTransition
+      .createFromSerialized
+      .callsFake(async () => new DocumentsStateTransition(documentFixture));
 
     const tendermintRpcMock = createTendermintRPCClientMock(this.sinon);
 
