@@ -51,5 +51,38 @@ describe('DataProvider', () => {
       expect(driveApiClientMock.request).to.be.calledOnceWithExactly('fetchContract', { contractId });
       expect(contractCacheMock.set).to.be.calledOnceWithExactly(contractId, actualContract);
     });
+
+    it('should throw an error if received an error from Drive with invalid code', async () => {
+      const error = {
+        code: 42,
+        message: 'not the message you are looking for',
+      };
+
+      driveApiClientMock.request.resolves({
+        error,
+      });
+
+      try {
+        await dataProvider.fetchDataContract(contractId);
+
+        expect.fail('Error was not thrown');
+      } catch (e) {
+        expect(e.message).to.equal(`Can\'t fetch contract: ${error.message}`);
+      }
+    });
+
+    it('should return null if Drive returned invalid argument error', async () => {
+      const error = {
+        code: -32602, // invalid argument error
+      };
+
+      driveApiClientMock.request.resolves({
+        error,
+      });
+
+      const result = await dataProvider.fetchDataContract(contractId);
+
+      expect(result).to.be.null();
+    });
   });
 });
