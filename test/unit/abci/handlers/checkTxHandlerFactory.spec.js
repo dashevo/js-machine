@@ -50,7 +50,7 @@ describe('checkTxHandlerFactory', () => {
       .callsFake(async () => new DocumentsStateTransition(documentFixture));
 
     const host = process.env.TENDERMINT_HOST;
-    const port = process.env.TENDERMINT_PORT;
+    const port = process.env.TENDERMINT_RPC_PORT;
     const response = getTxSearchResponse();
     tendermintRPC = new TendermintRPCClient(host, port);
     const requestUrl = `http://${tendermintRPC.client.options.host}:${tendermintRPC.client.options.port}`;

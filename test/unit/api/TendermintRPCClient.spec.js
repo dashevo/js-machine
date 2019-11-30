@@ -4,7 +4,7 @@ const TendermintRPCClient = require('../../../lib/api/TendermintRPCClient');
 describe('TendermintRPCClient', () => {
   let tendermintRPC;
   const host = process.env.TENDERMINT_HOST;
-  const port = process.env.TENDERMINT_PORT;
+  const port = process.env.TENDERMINT_RPC_PORT;
 
   beforeEach(() => {
     const response = { totalCount: 12 };
