@@ -1,5 +1,6 @@
 const nock = require('nock');
 const TendermintRPCClient = require('../../../lib/api/TendermintRPCClient');
+const getTxSearchResponse = require('../../../test/fixtures/getTxSearchResponse');
 
 describe('TendermintRPCClient', () => {
   let tendermintRPC;
@@ -7,7 +8,7 @@ describe('TendermintRPCClient', () => {
   const port = process.env.TENDERMINT_RPC_PORT;
 
   beforeEach(() => {
-    const response = { totalCount: 12 };
+    const response = getTxSearchResponse();
     tendermintRPC = new TendermintRPCClient(host, port);
     const requestUrl = `http://${tendermintRPC.client.options.host}:${tendermintRPC.client.options.port}`;
     nock(requestUrl)
