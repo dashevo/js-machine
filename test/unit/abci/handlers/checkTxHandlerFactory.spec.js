@@ -66,7 +66,7 @@ describe('checkTxHandlerFactory', () => {
       rateLimiterActive: true,
       rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
       rateLimiterMax: parseInt(process.env.RATE_LIMITER_MAX_TRANSITIONS_PER_ID, 10),
-      rateLimiterIntervalPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+      rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
     };
 
     checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterOffOptions);
@@ -97,6 +97,26 @@ describe('checkTxHandlerFactory', () => {
     expect(response).to.be.an.instanceOf(ResponseCheckTx);
     expect(response.code).to.equal(0);
 
+    expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
+  });
+
+  it('should validate a State Transition with rate limiter and return quota exceeded response with code 1', async () => {
+    const rateLimiterOverLimit = {
+      tendermintRPC,
+      rateLimiterActive: true,
+      rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
+      rateLimiterMax: 10,
+      rateLimiterIntervalPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+    };
+
+    const checkTxHandlerOverLimit = checkTxHandlerFactory(dppMock, rateLimiterOverLimit);
+    const response = await checkTxHandlerOverLimit(request, blockchainState);
+
+    expect(response).to.be.an.instanceOf(ResponseCheckTx);
+    expect(response.code).to.be.equal(1);
+    expect(response.tags.length).to.be.equal(2);
+    expect(response.log).to.be.equal('state transition quota exceeded for identity undefined');
+    expect(response.info).to.be.equal('state transition quota exceeded');
     expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
   });
 

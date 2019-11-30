@@ -17,6 +17,7 @@ const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/er
 const getIdentityCreateSTFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture');
 const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFixture');
 const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
+const getDocumentFixture = require('@dashevo/dpp/lib/test/fixtures/getDocumentsFixture');
 
 const deliverTxHandlerFactory = require('../../../../lib/abci/handlers/deliverTxHandlerFactory');
 const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateStatePromiseClientMock');
@@ -31,6 +32,8 @@ describe('deliverTxHandlerFactory', () => {
   let deliverTxHandlerWithRateLimiter;
   let driveUpdateStateClient;
   let request;
+  let documentRequest;
+  let dataContractRequest;
   let identityRequest;
   let blockHeight;
   let blockHash;
@@ -38,6 +41,7 @@ describe('deliverTxHandlerFactory', () => {
   let blockchainStateMock;
   let createIdentityStateTransitionFixture;
   let stateTransitionFixture;
+  let stateTransitionFixtureDataContract;
   let identityRepositoryMock;
   let identityFixture;
   let blockExecutionDBTransactionsMock;
@@ -45,21 +49,28 @@ describe('deliverTxHandlerFactory', () => {
   let dpp;
 
   beforeEach(function beforeEach() {
+    const documentFixture = getDocumentFixture();
     const dataContractFixture = getDataContractFixture();
 
     dpp = new DashPlatformProtocol();
     identityFixture = getIdentityFixture();
     createIdentityStateTransitionFixture = getIdentityCreateSTFixture();
 
-    stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
+    stateTransitionFixture = dpp.document.createStateTransition(documentFixture);
+    stateTransitionFixtureDataContract = dpp
+      .dataContract.createStateTransition(dataContractFixture);
 
     identityRepositoryMock = {
       fetch: this.sinon.stub(),
       store: this.sinon.stub(),
     };
 
-    request = {
+    documentRequest = {
       tx: stateTransitionFixture.serialize(),
+    };
+
+    dataContractRequest = {
+      tx: stateTransitionFixtureDataContract.serialize(),
     };
 
     identityRequest = {
@@ -116,7 +127,7 @@ describe('deliverTxHandlerFactory', () => {
       rateLimiterActive: true,
       rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
       rateLimiterMax: parseInt(process.env.RATE_LIMITER_MAX_TRANSITIONS_PER_ID, 10),
-      rateLimiterIntervalPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+      rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
     };
 
     deliverTxHandler = deliverTxHandlerFactory(
@@ -137,8 +148,8 @@ describe('deliverTxHandlerFactory', () => {
     );
   });
 
-  it('should apply a State Transition and return response with code 0', async () => {
-    const response = await deliverTxHandler(request);
+  it('should apply a document State Transition and return response with code 0', async () => {
+    const response = await deliverTxHandler(documentRequest);
 
     const applyStateTransitionRequest = new ApplyStateTransitionRequest();
 
@@ -160,8 +171,33 @@ describe('deliverTxHandlerFactory', () => {
     expect(identityRepositoryMock.fetch).to.be.not.called();
   });
 
-  it('should apply a State Transition with rate limiter and return response with code 0', async () => {
-    const response = await deliverTxHandlerWithRateLimiter(request);
+  it('should apply a document State Transition with rate limiter and return response with code 0', async () => {
+    const response = await deliverTxHandlerWithRateLimiter(documentRequest);
+
+    const applyStateTransitionRequest = new ApplyStateTransitionRequest();
+
+    applyStateTransitionRequest.setBlockHeight(blockHeight);
+    applyStateTransitionRequest.setBlockHash(blockHash);
+
+    applyStateTransitionRequest.setStateTransition(
+      stateTransitionFixture.serialize(),
+    );
+
+    expect(response).to.be.an.instanceOf(ResponseDeliverTx);
+    expect(response.code).to.equal(0);
+    expect(response.tags.length).to.be.equal(1);
+    expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(documentRequest.tx);
+
+    expect(driveUpdateStateClient.applyStateTransition).to.be.calledOnceWith(
+      applyStateTransitionRequest,
+    );
+
+    expect(identityRepositoryMock.store).to.be.not.called();
+    expect(identityRepositoryMock.fetch).to.be.not.called();
+  });
+
+  it('should apply a data contract State Transition and return response with code 0', async () => {
+    const response = await deliverTxHandler(dataContractRequest);
 
     const applyStateTransitionRequest = new ApplyStateTransitionRequest();
 
@@ -205,7 +241,7 @@ describe('deliverTxHandlerFactory', () => {
     dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
-      await deliverTxHandler(request);
+      await deliverTxHandler(documentRequest);
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
@@ -223,7 +259,7 @@ describe('deliverTxHandlerFactory', () => {
     dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
-      await deliverTxHandler(request);
+      await deliverTxHandler(documentRequest);
 
       expect.fail('should throw an error');
     } catch (e) {

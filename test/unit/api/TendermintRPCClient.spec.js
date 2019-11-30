@@ -27,7 +27,7 @@ describe('TendermintRPCClient', () => {
     expect(response).to.have.property('txs');
     expect(response.txs[0]).to.have.property('proof');
     expect(response).to.have.property('total_count');
-    expect(response.total_count).to.equal('1');
+    expect(response.total_count).to.equal('12');
   });
 
   it('should fetch a transition by tag with key and value', async () => {
@@ -39,7 +39,7 @@ describe('TendermintRPCClient', () => {
     expect(response).to.have.property('txs');
     expect(response.txs[0]).to.have.property('proof');
     expect(response).to.have.property('total_count');
-    expect(response.total_count).to.equal('1');
+    expect(response.total_count).to.equal('12');
   });
 
   it('should fetch a transition by tag with key, value and prove', async () => {
@@ -52,6 +52,6 @@ describe('TendermintRPCClient', () => {
     expect(response).to.have.property('txs');
     expect(response.txs[0]).to.have.property('proof');
     expect(response).to.have.property('total_count');
-    expect(response.total_count).to.equal('1');
+    expect(response.total_count).to.equal('12');
   });
 });
