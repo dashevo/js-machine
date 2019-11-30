@@ -3,10 +3,12 @@ const TendermintRPCClient = require('../../../lib/api/TendermintRPCClient');
 
 describe('TendermintRPCClient', () => {
   let tendermintRPC;
+  const host = process.env.TENDERMINT_HOST;
+  const port = process.env.TENDERMINT_PORT;
 
   beforeEach(() => {
     const response = { totalCount: 12 };
-    tendermintRPC = new TendermintRPCClient();
+    tendermintRPC = new TendermintRPCClient(host, port);
     const requestUrl = `http://${tendermintRPC.client.options.host}:${tendermintRPC.client.options.port}`;
     nock(requestUrl)
       .post('/')
@@ -15,18 +17,17 @@ describe('TendermintRPCClient', () => {
 
   it('should construct a TendermintRPCClient instance', async () => {
     expect(tendermintRPC).to.be.instanceOf(TendermintRPCClient);
-    expect(tendermintRPC.client.options.host).to.be.a('string');
-    expect(tendermintRPC.client.options.port).to.be.a('string');
   });
 
   it('should fetch a transition by tag just with key', async () => {
     const key = 'myKey';
     const response = await tendermintRPC.fetchTransitionsByTag(key);
+
     expect(response).to.be.instanceOf(Object);
-    expect(response).to.have.property('totalCount');
-    expect(response).to.deep.include({
-      totalCount: 12,
-    });
+    expect(response).to.have.property('txs');
+    expect(response.txs[0]).to.have.property('proof');
+    expect(response).to.have.property('total_count');
+    expect(response.total_count).to.equal('1');
   });
 
   it('should fetch a transition by tag with key and value', async () => {
@@ -35,10 +36,10 @@ describe('TendermintRPCClient', () => {
     const response = await tendermintRPC.fetchTransitionsByTag(key, value);
 
     expect(response).to.be.instanceOf(Object);
-    expect(response).to.have.property('totalCount');
-    expect(response).to.deep.include({
-      totalCount: 12,
-    });
+    expect(response).to.have.property('txs');
+    expect(response.txs[0]).to.have.property('proof');
+    expect(response).to.have.property('total_count');
+    expect(response.total_count).to.equal('1');
   });
 
   it('should fetch a transition by tag with key, value and prove', async () => {
@@ -48,9 +49,9 @@ describe('TendermintRPCClient', () => {
     const response = await tendermintRPC.fetchTransitionsByTag(key, value, prove);
 
     expect(response).to.be.instanceOf(Object);
-    expect(response).to.have.property('totalCount');
-    expect(response).to.deep.include({
-      totalCount: 12,
-    });
+    expect(response).to.have.property('txs');
+    expect(response.txs[0]).to.have.property('proof');
+    expect(response).to.have.property('total_count');
+    expect(response.total_count).to.equal('1');
   });
 });

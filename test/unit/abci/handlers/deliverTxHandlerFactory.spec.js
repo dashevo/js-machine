@@ -1,3 +1,4 @@
+const nock = require('nock');
 const {
   abci: {
     ResponseDeliverTx,
@@ -22,9 +23,12 @@ const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateSt
 
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
+const TendermintRPCClient = require('../../../../lib/api/TendermintRPCClient');
+const getTxSearchResponse = require('../../../../test/fixtures/getTxSearchResponse');
 
 describe('deliverTxHandlerFactory', () => {
   let deliverTxHandler;
+  let deliverTxHandlerWithRateLimiter;
   let driveUpdateStateClient;
   let request;
   let identityRequest;
@@ -95,17 +99,69 @@ describe('deliverTxHandlerFactory', () => {
       getIdentityTransaction: this.sinon.stub().returns(dbTransaction),
     };
 
+    const host = process.env.TENDERMINT_HOST;
+    const port = process.env.TENDERMINT_PORT;
+    const response = getTxSearchResponse();
+    const tendermintRPC = new TendermintRPCClient(host, port);
+    const requestUrl = `http://${tendermintRPC.client.options.host}:${tendermintRPC.client.options.port}`;
+    nock(requestUrl)
+      .post('/')
+      .reply(200, response);
+
+    const rateLimiterOffOptions = {
+      rateLimiterActive: false,
+    };
+    const rateLimiterOnOptions = {
+      tendermintRPC,
+      rateLimiterActive: true,
+      rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
+      rateLimiterMax: parseInt(process.env.RATE_LIMITER_MAX_TRANSITIONS_PER_ID, 10),
+      rateLimiterIntervalPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+    };
+
     deliverTxHandler = deliverTxHandlerFactory(
       dppMock,
       driveUpdateStateClient,
       blockchainStateMock,
       identityRepositoryMock,
       blockExecutionDBTransactionsMock,
+      rateLimiterOffOptions,
+    );
+    deliverTxHandlerWithRateLimiter = deliverTxHandlerFactory(
+      dppMock,
+      driveUpdateStateClient,
+      blockchainStateMock,
+      identityRepositoryMock,
+      blockExecutionDBTransactionsMock,
+      rateLimiterOnOptions,
     );
   });
 
-  it('should apply State Transition and return response with code 0', async () => {
+  it('should apply a State Transition and return response with code 0', async () => {
     const response = await deliverTxHandler(request);
+
+    const applyStateTransitionRequest = new ApplyStateTransitionRequest();
+
+    applyStateTransitionRequest.setBlockHeight(blockHeight);
+    applyStateTransitionRequest.setBlockHash(blockHash);
+
+    applyStateTransitionRequest.setStateTransition(
+      stateTransitionFixture.serialize(),
+    );
+
+    expect(response).to.be.an.instanceOf(ResponseDeliverTx);
+    expect(response.code).to.equal(0);
+
+    expect(driveUpdateStateClient.applyStateTransition).to.be.calledOnceWith(
+      applyStateTransitionRequest,
+    );
+
+    expect(identityRepositoryMock.store).to.be.not.called();
+    expect(identityRepositoryMock.fetch).to.be.not.called();
+  });
+
+  it('should apply a State Transition with rate limiter and return response with code 0', async () => {
+    const response = await deliverTxHandlerWithRateLimiter(request);
 
     const applyStateTransitionRequest = new ApplyStateTransitionRequest();
 

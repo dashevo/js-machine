@@ -5,6 +5,7 @@ const {
 } = require('abci/types');
 
 const DashPlatformProtocol = require('@dashevo/dpp');
+const nock = require('nock');
 
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
@@ -18,10 +19,12 @@ const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHand
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
 const BlockchainState = require('../../../../lib/state/BlockchainState');
-const createTendermintRPCClientMock = require('../../../../lib/test/mock/createTendermintRPCClientMock');
+const TendermintRPCClient = require('../../../../lib/api/TendermintRPCClient');
+const getTxSearchResponse = require('../../../../test/fixtures/getTxSearchResponse');
 
 describe('checkTxHandlerFactory', () => {
   let checkTxHandler;
+  let checkTxHandlerWithRateLimiter;
   let request;
   let dppMock;
   let stateTransitionFixture;
@@ -29,6 +32,7 @@ describe('checkTxHandlerFactory', () => {
   let blockchainState;
   let lastBlockHeight;
   let lastBlockAppHash;
+  let tendermintRPC;
 
   beforeEach(function beforeEach() {
     const dpp = new DashPlatformProtocol();
@@ -45,9 +49,28 @@ describe('checkTxHandlerFactory', () => {
       .createFromSerialized
       .callsFake(async () => new DocumentsStateTransition(documentFixture));
 
-    const tendermintRpcMock = createTendermintRPCClientMock(this.sinon);
+    const host = process.env.TENDERMINT_HOST;
+    const port = process.env.TENDERMINT_PORT;
+    const response = getTxSearchResponse();
+    tendermintRPC = new TendermintRPCClient(host, port);
+    const requestUrl = `http://${tendermintRPC.client.options.host}:${tendermintRPC.client.options.port}`;
+    nock(requestUrl)
+      .post('/')
+      .reply(200, response);
 
-    checkTxHandler = checkTxHandlerFactory(dppMock, tendermintRpcMock);
+    const rateLimiterOffOptions = {
+      rateLimiterActive: false,
+    };
+    const rateLimiterOnOptions = {
+      tendermintRPC,
+      rateLimiterActive: true,
+      rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
+      rateLimiterMax: parseInt(process.env.RATE_LIMITER_MAX_TRANSITIONS_PER_ID, 10),
+      rateLimiterIntervalPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+    };
+
+    checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterOffOptions);
+    checkTxHandlerWithRateLimiter = checkTxHandlerFactory(dppMock, rateLimiterOnOptions);
     db = level('./db/state-test', { valueEncoding: 'binary' });
     lastBlockHeight = 1;
     lastBlockAppHash = Buffer.from('something');
@@ -59,8 +82,17 @@ describe('checkTxHandlerFactory', () => {
     await db.close();
   });
 
-  it('should validate State Transition and return response with code 0', async () => {
+  it('should validate a State Transition and return response with code 0', async () => {
     const response = await checkTxHandler(request, blockchainState);
+
+    expect(response).to.be.an.instanceOf(ResponseCheckTx);
+    expect(response.code).to.equal(0);
+
+    expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
+  });
+
+  it('should validate a State Transition with rate limiter and return response with code 0', async () => {
+    const response = await checkTxHandlerWithRateLimiter(request, blockchainState);
 
     expect(response).to.be.an.instanceOf(ResponseCheckTx);
     expect(response.code).to.equal(0);
