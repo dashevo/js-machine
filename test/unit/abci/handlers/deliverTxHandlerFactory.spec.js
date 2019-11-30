@@ -32,8 +32,8 @@ describe('deliverTxHandlerFactory', () => {
   let deliverTxHandlerWithRateLimiter;
   let driveUpdateStateClient;
   let request;
-  let documentRequest;
   let dataContractRequest;
+  let documentRequest;
   let identityRequest;
   let blockHeight;
   let blockHash;
@@ -41,7 +41,7 @@ describe('deliverTxHandlerFactory', () => {
   let blockchainStateMock;
   let createIdentityStateTransitionFixture;
   let stateTransitionFixture;
-  let stateTransitionFixtureDataContract;
+  let stateTransitionDataContractFixture;
   let identityRepositoryMock;
   let identityFixture;
   let blockExecutionDBTransactionsMock;
@@ -49,16 +49,16 @@ describe('deliverTxHandlerFactory', () => {
   let dpp;
 
   beforeEach(function beforeEach() {
-    const documentFixture = getDocumentFixture();
     const dataContractFixture = getDataContractFixture();
+    const documentFixture = getDocumentFixture();
+    identityFixture = getIdentityFixture();
 
     dpp = new DashPlatformProtocol();
-    identityFixture = getIdentityFixture();
-    createIdentityStateTransitionFixture = getIdentityCreateSTFixture();
-
     stateTransitionFixture = dpp.document.createStateTransition(documentFixture);
-    stateTransitionFixtureDataContract = dpp
+    stateTransitionDataContractFixture = dpp
       .dataContract.createStateTransition(dataContractFixture);
+
+    createIdentityStateTransitionFixture = getIdentityCreateSTFixture();
 
     identityRepositoryMock = {
       fetch: this.sinon.stub(),
@@ -70,7 +70,7 @@ describe('deliverTxHandlerFactory', () => {
     };
 
     dataContractRequest = {
-      tx: stateTransitionFixtureDataContract.serialize(),
+      tx: stateTransitionDataContractFixture.serialize(),
     };
 
     identityRequest = {
@@ -82,6 +82,11 @@ describe('deliverTxHandlerFactory', () => {
       .stateTransition
       .createFromSerialized
       .resolves(stateTransitionFixture);
+    dppMock
+      .stateTransition
+      .createFromSerialized
+      .withArgs(stateTransitionDataContractFixture.serialize())
+      .resolves(stateTransitionDataContractFixture);
     dppMock
       .stateTransition
       .createFromSerialized
@@ -205,7 +210,7 @@ describe('deliverTxHandlerFactory', () => {
     applyStateTransitionRequest.setBlockHash(blockHash);
 
     applyStateTransitionRequest.setStateTransition(
-      stateTransitionFixture.serialize(),
+      stateTransitionDataContractFixture.serialize(),
     );
 
     expect(response).to.be.an.instanceOf(ResponseDeliverTx);
