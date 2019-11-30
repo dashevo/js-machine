@@ -1,4 +1,5 @@
 /**
+ * http://cw.hubwiz.com/card/c/tendermint-rpc-api/1/1/16/
  * @return {string}
  */
 module.exports = function getTxSearchResponse() {
