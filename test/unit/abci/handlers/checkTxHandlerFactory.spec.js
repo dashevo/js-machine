@@ -109,7 +109,7 @@ describe('checkTxHandlerFactory', () => {
     expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
   });
 
-  it('should validate a State Transition with rate limiter and return quota exceeded response with code 1', async () => {
+  it('should validate a State Transition with rate limiter and return quota exceeded response with code 3', async () => {
     lastBlockHeight = 11;
     lastBlockAppHash = Buffer.from('something');
     blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
@@ -127,7 +127,7 @@ describe('checkTxHandlerFactory', () => {
     const response = await checkTxHandlerOverLimit(request, blockchainState);
 
     expect(response).to.be.an.instanceOf(ResponseCheckTx);
-    expect(response.code).to.be.equal(1);
+    expect(response.code).to.be.equal(3);
     expect(response.tags.length).to.be.equal(2);
     expect(response.info).to.be.equal('state transition quota exceeded');
     expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
