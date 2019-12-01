@@ -117,7 +117,7 @@ describe('deliverTxHandlerFactory', () => {
 
     const host = process.env.TENDERMINT_HOST;
     const port = process.env.TENDERMINT_RPC_PORT;
-    const response = getTxSearchResponse();
+    const response = getTxSearchResponse.getHits();
     const tendermintRPC = new TendermintRPCClient(host, port);
     const requestUrl = `http://${tendermintRPC.client.options.host}:${tendermintRPC.client.options.port}`;
     nock(requestUrl)
@@ -133,6 +133,8 @@ describe('deliverTxHandlerFactory', () => {
       rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
       rateLimiterMax: parseInt(process.env.RATE_LIMITER_MAX_TRANSITIONS_PER_ID, 10),
       rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+      rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
+      rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
     };
 
     deliverTxHandler = deliverTxHandlerFactory(

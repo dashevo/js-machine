@@ -51,12 +51,19 @@ describe('checkTxHandlerFactory', () => {
 
     const host = process.env.TENDERMINT_HOST;
     const port = process.env.TENDERMINT_RPC_PORT;
-    const response = getTxSearchResponse();
+    const responseEmpty = getTxSearchResponse.getEmpty();
+    const responseHits = getTxSearchResponse.getHits();
     tendermintRPC = new TendermintRPCClient(host, port);
     const requestUrl = `http://${tendermintRPC.client.options.host}:${tendermintRPC.client.options.port}`;
     nock(requestUrl)
-      .post('/')
-      .reply(200, response);
+      .post('/', /ratelimiter.interval.1=/gi)
+      .reply(200, responseHits)
+      .post('/', /ratelimiter.interval.10=/gi)
+      .reply(200, responseEmpty)
+      .post('/', /ratelimiter.interval.0=/gi)
+      .reply(200, responseEmpty)
+      .post('/', /ratelimiter.ban.0=/gi)
+      .reply(200, responseEmpty);
 
     const rateLimiterOffOptions = {
       rateLimiterActive: false,
@@ -67,6 +74,8 @@ describe('checkTxHandlerFactory', () => {
       rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
       rateLimiterMax: parseInt(process.env.RATE_LIMITER_MAX_TRANSITIONS_PER_ID, 10),
       rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+      rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
+      rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
     };
 
     checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterOffOptions);
@@ -101,12 +110,17 @@ describe('checkTxHandlerFactory', () => {
   });
 
   it('should validate a State Transition with rate limiter and return quota exceeded response with code 1', async () => {
+    lastBlockHeight = 11;
+    lastBlockAppHash = Buffer.from('something');
+    blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
     const rateLimiterOverLimit = {
       tendermintRPC,
       rateLimiterActive: true,
       rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
       rateLimiterMax: 10,
-      rateLimiterIntervalPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+      rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+      rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
+      rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
     };
 
     const checkTxHandlerOverLimit = checkTxHandlerFactory(dppMock, rateLimiterOverLimit);
@@ -115,7 +129,6 @@ describe('checkTxHandlerFactory', () => {
     expect(response).to.be.an.instanceOf(ResponseCheckTx);
     expect(response.code).to.be.equal(1);
     expect(response.tags.length).to.be.equal(2);
-    expect(response.log).to.be.equal('state transition quota exceeded for identity undefined');
     expect(response.info).to.be.equal('state transition quota exceeded');
     expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
   });
