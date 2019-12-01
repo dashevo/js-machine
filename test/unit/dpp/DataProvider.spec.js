@@ -67,7 +67,7 @@ describe('DataProvider', () => {
 
         expect.fail('Error was not thrown');
       } catch (e) {
-        expect(e.message).to.equal(`Can\'t fetch contract: ${error.message}`);
+        expect(e.message).to.equal(`Can't fetch contract: ${error.message}`);
       }
     });
 
