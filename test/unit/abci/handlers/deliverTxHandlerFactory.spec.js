@@ -8,6 +8,8 @@ const {
   ApplyStateTransitionRequest,
 } = require('@dashevo/drive-grpc');
 
+const GrpcError = require('@dashevo/grpc-common/lib/server/error/GrpcError');
+
 const DashPlatformProtocol = require('@dashevo/dpp');
 
 const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
@@ -125,6 +127,51 @@ describe('deliverTxHandlerFactory', () => {
 
     expect(identityRepositoryMock.store).to.be.not.called();
     expect(identityRepositoryMock.fetch).to.be.not.called();
+  });
+
+  it('should throw InvalidArgumentAbciError if Drive Update State Client throws an invalid argument error', async () => {
+    const grpcClientError = new Error();
+    grpcClientError.message = 'Invalid State Transition';
+    grpcClientError.code = GrpcError.CODES.INVALID_ARGUMENT;
+    grpcClientError.metadata = {
+      getMap() {
+        return {};
+      },
+    };
+
+    driveUpdateStateClient.applyStateTransition.rejects(grpcClientError);
+
+    try {
+      await deliverTxHandler(request);
+
+      expect.fail('should throw InvalidArgumentAbciError error');
+    } catch (e) {
+      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
+      expect(e.getMessage()).to.equal(`Invalid argument: ${grpcClientError.message}`);
+      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+      expect(e.getData()).to.deep.equal(grpcClientError.metadata.getMap());
+    }
+  });
+
+  it('should throw an error if Drive Update State Client throws any error except invalid argument', async () => {
+    const grpcClientError = new Error();
+    grpcClientError.message = 'Internal Error';
+    grpcClientError.code = GrpcError.CODES.INTERNAL;
+    grpcClientError.metadata = {
+      getMap() {
+        return {};
+      },
+    };
+
+    driveUpdateStateClient.applyStateTransition.rejects(grpcClientError);
+
+    try {
+      await deliverTxHandler(request);
+
+      expect.fail('should throw an error');
+    } catch (e) {
+      expect(e).to.be.equal(grpcClientError);
+    }
   });
 
   it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
