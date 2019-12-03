@@ -1,4 +1,3 @@
-const nock = require('nock');
 const {
   abci: {
     ResponseDeliverTx,
@@ -26,12 +25,11 @@ const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateSt
 
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
-const TendermintRPCClient = require('../../../../lib/api/TendermintRPCClient');
-const getTxSearchResponse = require('../../../../test/fixtures/getTxSearchResponse');
+
+const RateLimiterMock = require('../../../../lib/test/mock/RateLimiterMock');
 
 describe('deliverTxHandlerFactory', () => {
   let deliverTxHandler;
-  let deliverTxHandlerWithRateLimiter;
   let driveUpdateStateClient;
   let request;
   let dataContractRequest;
@@ -49,6 +47,7 @@ describe('deliverTxHandlerFactory', () => {
   let blockExecutionDBTransactionsMock;
   let dbTransaction;
   let dpp;
+  let rateLimiterMock;
 
   beforeEach(function beforeEach() {
     const dataContractFixture = getDataContractFixture();
@@ -117,27 +116,7 @@ describe('deliverTxHandlerFactory', () => {
       getIdentityTransaction: this.sinon.stub().returns(dbTransaction),
     };
 
-    const host = process.env.TENDERMINT_HOST;
-    const port = process.env.TENDERMINT_RPC_PORT;
-    const response = getTxSearchResponse.getHits();
-    const tendermintRPC = new TendermintRPCClient(host, port);
-    const requestUrl = `http://${tendermintRPC.client.options.host}:${tendermintRPC.client.options.port}`;
-    nock(requestUrl)
-      .post('/')
-      .reply(200, response);
-
-    const rateLimiterOffOptions = {
-      rateLimiterActive: false,
-    };
-    const rateLimiterOnOptions = {
-      tendermintRPC,
-      rateLimiterActive: true,
-      rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
-      rateLimiterMax: parseInt(process.env.RATE_LIMITER_MAX_TRANSITIONS_PER_ID, 10),
-      rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
-      rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
-      rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
-    };
+    rateLimiterMock = new RateLimiterMock(this.sinon);
 
     deliverTxHandler = deliverTxHandlerFactory(
       dppMock,
@@ -145,15 +124,8 @@ describe('deliverTxHandlerFactory', () => {
       blockchainStateMock,
       identityRepositoryMock,
       blockExecutionDBTransactionsMock,
-      rateLimiterOffOptions,
-    );
-    deliverTxHandlerWithRateLimiter = deliverTxHandlerFactory(
-      dppMock,
-      driveUpdateStateClient,
-      blockchainStateMock,
-      identityRepositoryMock,
-      blockExecutionDBTransactionsMock,
-      rateLimiterOnOptions,
+      rateLimiterMock,
+      false,
     );
   });
 
@@ -181,7 +153,17 @@ describe('deliverTxHandlerFactory', () => {
   });
 
   it('should apply a document State Transition with rate limiter and return response with code 0', async () => {
-    const response = await deliverTxHandlerWithRateLimiter(documentRequest);
+    deliverTxHandler = deliverTxHandlerFactory(
+      dppMock,
+      driveUpdateStateClient,
+      blockchainStateMock,
+      identityRepositoryMock,
+      blockExecutionDBTransactionsMock,
+      rateLimiterMock,
+      true,
+    );
+
+    const response = await deliverTxHandler(documentRequest);
 
     const applyStateTransitionRequest = new ApplyStateTransitionRequest();
 

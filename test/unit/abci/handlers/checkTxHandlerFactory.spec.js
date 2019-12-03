@@ -5,7 +5,6 @@ const {
 } = require('abci/types');
 
 const DashPlatformProtocol = require('@dashevo/dpp');
-const nock = require('nock');
 
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
@@ -19,12 +18,11 @@ const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHand
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
 const BlockchainState = require('../../../../lib/state/BlockchainState');
-const TendermintRPCClient = require('../../../../lib/api/TendermintRPCClient');
-const getTxSearchResponse = require('../../../../test/fixtures/getTxSearchResponse');
+
+const RateLimiterMock = require('../../../../lib/test/mock/RateLimiterMock');
 
 describe('checkTxHandlerFactory', () => {
   let checkTxHandler;
-  let checkTxHandlerWithRateLimiter;
   let request;
   let dppMock;
   let stateTransitionFixture;
@@ -33,6 +31,7 @@ describe('checkTxHandlerFactory', () => {
   let lastBlockHeight;
   let lastBlockAppHash;
   let tendermintRPC;
+  let rateLimiterMock;
 
   beforeEach(function beforeEach() {
     const dpp = new DashPlatformProtocol();
@@ -49,40 +48,12 @@ describe('checkTxHandlerFactory', () => {
       .createFromSerialized
       .callsFake(async () => new DocumentsStateTransition(documentFixture));
 
-    const host = process.env.TENDERMINT_HOST;
-    const port = process.env.TENDERMINT_RPC_PORT;
-    const responseEmpty = getTxSearchResponse.getEmpty();
-    const responseHits = getTxSearchResponse.getHits();
-    tendermintRPC = new TendermintRPCClient(host, port);
-    const requestUrl = `http://${tendermintRPC.client.options.host}:${tendermintRPC.client.options.port}`;
-    nock(requestUrl)
-      .post('/', /ratelimiter.interval.1=/gi)
-      .reply(200, responseHits)
-      .post('/', /ratelimiter.ban.1=/gi)
-      .reply(200, responseHits)
-      .post('/', /ratelimiter.interval.10=/gi)
-      .reply(200, responseEmpty)
-      .post('/', /ratelimiter.interval.0=/gi)
-      .reply(200, responseEmpty)
-      .post('/', /ratelimiter.ban.0=/gi)
-      .reply(200, responseEmpty);
+    rateLimiterMock = new RateLimiterMock(this.sinon);
 
-    const rateLimiterOffOptions = {
-      rateLimiterActive: false,
-    };
-    const rateLimiterOnOptions = {
-      tendermintRPC,
-      rateLimiterActive: true,
-      rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
-      rateLimiterMax: parseInt(process.env.RATE_LIMITER_MAX_TRANSITIONS_PER_ID, 10),
-      rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
-      rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
-      rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
-    };
+    checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterMock, false);
 
-    checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterOffOptions);
-    checkTxHandlerWithRateLimiter = checkTxHandlerFactory(dppMock, rateLimiterOnOptions);
     db = level('./db/state-test', { valueEncoding: 'binary' });
+
     lastBlockHeight = 1;
     lastBlockAppHash = Buffer.from('something');
     blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
@@ -99,63 +70,6 @@ describe('checkTxHandlerFactory', () => {
     expect(response).to.be.an.instanceOf(ResponseCheckTx);
     expect(response.code).to.equal(0);
 
-    expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
-  });
-
-  it('should validate a State Transition with rate limiter and return response with code 0', async () => {
-    const response = await checkTxHandlerWithRateLimiter(request, blockchainState);
-
-    expect(response).to.be.an.instanceOf(ResponseCheckTx);
-    expect(response.code).to.equal(0);
-
-    expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
-  });
-
-  it('should validate a State Transition with rate limiter and return quota exceeded response with code 3', async () => {
-    lastBlockHeight = 11;
-    lastBlockAppHash = Buffer.from('something');
-    blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
-    const rateLimiterOverLimit = {
-      tendermintRPC,
-      rateLimiterActive: true,
-      rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
-      rateLimiterMax: 10,
-      rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
-      rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
-      rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
-    };
-
-    const checkTxHandlerOverLimit = checkTxHandlerFactory(dppMock, rateLimiterOverLimit);
-    const response = await checkTxHandlerOverLimit(request, blockchainState);
-
-    expect(response).to.be.an.instanceOf(ResponseCheckTx);
-    expect(response.code).to.be.equal(3);
-    expect(response.tags.length).to.be.equal(2);
-    expect(response.info).to.be.equal('state transition quota exceeded');
-    expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
-  });
-
-  it('should validate a State Transition with rate limiter and return banned response with code 4', async () => {
-    lastBlockHeight = 111;
-    lastBlockAppHash = Buffer.from('something');
-    blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
-    const rateLimiterOverLimit = {
-      tendermintRPC,
-      rateLimiterActive: true,
-      rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
-      rateLimiterMax: 10,
-      rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
-      rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
-      rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
-    };
-
-    const checkTxHandlerOverLimit = checkTxHandlerFactory(dppMock, rateLimiterOverLimit);
-    const response = await checkTxHandlerOverLimit(request, blockchainState);
-
-    expect(response).to.be.an.instanceOf(ResponseCheckTx);
-    expect(response.code).to.be.equal(4);
-    expect(response.tags.length).to.be.equal(0);
-    expect(response.info).to.be.equal('Identity has been banned for some time');
     expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
   });
 
@@ -205,5 +119,66 @@ describe('checkTxHandlerFactory', () => {
     } catch (e) {
       expect(e).to.be.equal(error);
     }
+  });
+
+  describe('with rate limiter', () => {
+    it('should validate a State Transition with rate limiter and return response with code 0', async () => {
+      checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterMock, true);
+
+      const response = await checkTxHandler(request, blockchainState);
+
+      expect(response).to.be.an.instanceOf(ResponseCheckTx);
+      expect(response.code).to.equal(0);
+
+      expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
+    });
+
+    it('should validate a State Transition with rate limiter and return quota exceeded response with code 3', async () => {
+      lastBlockHeight = 11;
+      lastBlockAppHash = Buffer.from('something');
+      blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
+      const rateLimiterOverLimit = {
+        tendermintRPC,
+        rateLimiterActive: true,
+        rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
+        rateLimiterMax: 10,
+        rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+        rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
+        rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
+      };
+
+      const checkTxHandlerOverLimit = checkTxHandlerFactory(dppMock, rateLimiterOverLimit);
+      const response = await checkTxHandlerOverLimit(request, blockchainState);
+
+      expect(response).to.be.an.instanceOf(ResponseCheckTx);
+      expect(response.code).to.be.equal(3);
+      expect(response.tags.length).to.be.equal(2);
+      expect(response.info).to.be.equal('state transition quota exceeded');
+      expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
+    });
+
+    it('should validate a State Transition with rate limiter and return banned response with code 4', async () => {
+      lastBlockHeight = 111;
+      lastBlockAppHash = Buffer.from('something');
+      blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
+      const rateLimiterOverLimit = {
+        tendermintRPC,
+        rateLimiterActive: true,
+        rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
+        rateLimiterMax: 10,
+        rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
+        rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
+        rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
+      };
+
+      const checkTxHandlerOverLimit = checkTxHandlerFactory(dppMock, rateLimiterOverLimit);
+      const response = await checkTxHandlerOverLimit(request, blockchainState);
+
+      expect(response).to.be.an.instanceOf(ResponseCheckTx);
+      expect(response.code).to.be.equal(4);
+      expect(response.tags.length).to.be.equal(0);
+      expect(response.info).to.be.equal('Identity has been banned for some time');
+      expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
+    });
   });
 });
