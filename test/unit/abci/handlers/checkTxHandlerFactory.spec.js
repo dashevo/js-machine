@@ -30,7 +30,6 @@ describe('checkTxHandlerFactory', () => {
   let blockchainState;
   let lastBlockHeight;
   let lastBlockAppHash;
-  let tendermintRPC;
   let rateLimiterMock;
 
   beforeEach(function beforeEach() {
