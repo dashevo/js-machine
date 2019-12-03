@@ -77,7 +77,7 @@ describe('RateLimiter', () => {
       const result = await rateLimiter.isBannedUser(userId, blockHeight);
 
       expect(fetchTransitionCountByEventMock).to.have.been.calledOnceWithExactly(
-        expectedKey, userId, { prove: true },
+        expectedKey, userId,
       );
 
       expect(result).to.be.false();
@@ -107,7 +107,7 @@ describe('RateLimiter', () => {
       const result = await rateLimiter.isQuotaExceeded(userId, blockHeight);
 
       expect(fetchTransitionCountByEventMock).to.have.been.calledOnceWithExactly(
-        expectedKey, userId, { prove: true },
+        expectedKey, userId,
       );
 
       expect(result).to.be.false();
