@@ -223,7 +223,7 @@ describe('deliverTxHandlerFactory', () => {
     driveUpdateStateClient.applyStateTransition.rejects(grpcClientError);
 
     try {
-      await deliverTxHandler(request);
+      await deliverTxHandler(documentRequest);
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
@@ -247,7 +247,7 @@ describe('deliverTxHandlerFactory', () => {
     driveUpdateStateClient.applyStateTransition.rejects(grpcClientError);
 
     try {
-      await deliverTxHandler(request);
+      await deliverTxHandler(documentRequest);
 
       expect.fail('should throw an error');
     } catch (e) {

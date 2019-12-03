@@ -137,18 +137,12 @@ describe('checkTxHandlerFactory', () => {
       lastBlockHeight = 11;
       lastBlockAppHash = Buffer.from('something');
       blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
-      const rateLimiterOverLimit = {
-        tendermintRPC,
-        rateLimiterActive: true,
-        rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
-        rateLimiterMax: 10,
-        rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
-        rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
-        rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
-      };
 
-      const checkTxHandlerOverLimit = checkTxHandlerFactory(dppMock, rateLimiterOverLimit);
-      const response = await checkTxHandlerOverLimit(request, blockchainState);
+      rateLimiterMock.isQuotaExceeded.resolves(true);
+
+      checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterMock, true);
+
+      const response = await checkTxHandler(request, blockchainState);
 
       expect(response).to.be.an.instanceOf(ResponseCheckTx);
       expect(response.code).to.be.equal(3);
@@ -161,18 +155,12 @@ describe('checkTxHandlerFactory', () => {
       lastBlockHeight = 111;
       lastBlockAppHash = Buffer.from('something');
       blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
-      const rateLimiterOverLimit = {
-        tendermintRPC,
-        rateLimiterActive: true,
-        rateLimiterInterval: parseInt(process.env.RATE_LIMITER_PER_BLOCK_INTERVAL, 10),
-        rateLimiterMax: 10,
-        rateLimiterPrefix: process.env.RATE_LIMITER_INTERVAL_PREFIX,
-        rateLimiterBanPrefix: process.env.RATE_LIMITER_BAN_PREFIX,
-        rateLimiterBanInterval: parseInt(process.env.RATE_LIMITER_PER_BAN_INTERVAL, 10),
-      };
 
-      const checkTxHandlerOverLimit = checkTxHandlerFactory(dppMock, rateLimiterOverLimit);
-      const response = await checkTxHandlerOverLimit(request, blockchainState);
+      rateLimiterMock.isBannedUser.resolves(true);
+
+      checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterMock, true);
+
+      const response = await checkTxHandler(request, blockchainState);
 
       expect(response).to.be.an.instanceOf(ResponseCheckTx);
       expect(response.code).to.be.equal(4);
