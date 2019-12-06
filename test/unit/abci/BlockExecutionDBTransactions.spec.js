@@ -5,11 +5,8 @@ describe('BlockExecutionDBTransactions', () => {
   let identityTransactionMock;
 
   beforeEach(function beforeEach() {
-    const commit = this.sinon.stub();
     identityTransactionMock = {
-      db: {
-        commit,
-      },
+      commit: this.sinon.stub(),
     };
 
     blockExecutionDBTransactions = new BlockExecutionDBTransactions();
@@ -38,6 +35,6 @@ describe('BlockExecutionDBTransactions', () => {
 
     await blockExecutionDBTransactions.commit();
 
-    expect(identityTransactionMock.db.commit).to.be.calledOnce();
+    expect(identityTransactionMock.commit).to.be.calledOnce();
   });
 });

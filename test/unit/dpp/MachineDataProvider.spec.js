@@ -7,15 +7,12 @@ describe('MachineDataProvider', () => {
   let contractCacheMock;
   let driveApiClientMock;
   let identityRepositoryMock;
-  let blockExecutionDBTransactionsMock;
   let identity;
-  let identityTransaction;
 
   beforeEach(function beforeEach() {
     contractId = '123';
     contract = {};
     identity = 'identity';
-    identityTransaction = 'identityTransaction';
 
     contractCacheMock = {
       set: this.sinon.stub(),
@@ -30,15 +27,10 @@ describe('MachineDataProvider', () => {
       fetch: this.sinon.stub(),
     };
 
-    blockExecutionDBTransactionsMock = {
-      getIdentityTransaction: this.sinon.stub().returns(identityTransaction),
-    };
-
     dataProvider = new MachineDataProvider(
       driveApiClientMock,
       contractCacheMock,
       identityRepositoryMock,
-      blockExecutionDBTransactionsMock,
     );
   });
 
@@ -113,9 +105,8 @@ describe('MachineDataProvider', () => {
       const result = await dataProvider.fetchIdentity(id);
 
       expect(result).to.equal(identity);
-      expect(blockExecutionDBTransactionsMock.getIdentityTransaction).to.be.calledOnce();
 
-      expect(identityRepositoryMock.fetch).to.be.calledOnceWithExactly(id, identityTransaction);
+      expect(identityRepositoryMock.fetch).to.be.calledOnceWithExactly(id);
     });
   });
 });
