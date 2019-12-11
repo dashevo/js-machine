@@ -94,13 +94,14 @@ describe('wrapInErrorHandlerFactory', () => {
   });
 
   it('should tag response if error have them', async () => {
-    const data = { sample: 'data' };
+    const userId = 'userId';
     const tags = [
       { key: 'one', value: 'valueOne' },
       { key: 'two', value: 'valueTwo' },
     ];
     const kvTags = tags.map(tag => new KVPair(tag));
-    const error = new RateLimiterQuotaExceededAbciError(data, tags);
+
+    const error = new RateLimiterQuotaExceededAbciError(userId, tags);
 
     methodMock.throws(error);
 

@@ -157,6 +157,7 @@ describe('checkTxHandlerFactory', () => {
       } catch (e) {
         expect(e).to.be.an.instanceOf(RateLimiterQuotaExceededAbciError);
         expect(e.getCode()).to.equal(AbciError.CODES.RATE_LIMITER_QUOTA_EXCEEDED);
+        expect(e.getUserId()).to.equal(userId);
         expect(e.data).to.deep.equal({ userId });
         expect(e.tags).to.deep.equal([
           { key: 'rateLimitedBanKey', value: userId },
@@ -182,6 +183,7 @@ describe('checkTxHandlerFactory', () => {
       } catch (e) {
         expect(e).to.be.an.instanceOf(RateLimiterUserIsBannedAbciError);
         expect(e.getCode()).to.equal(AbciError.CODES.RATE_LIMITER_BANNED);
+        expect(e.getUserId()).to.equal(userId);
         expect(e.data).to.deep.equal({ userId });
       }
     });
