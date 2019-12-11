@@ -95,11 +95,12 @@ describe('wrapInErrorHandlerFactory', () => {
 
   it('should tag response if error have them', async () => {
     const userId = 'userId';
-    const tags = [
-      { key: 'one', value: 'valueOne' },
-      { key: 'two', value: 'valueTwo' },
-    ];
-    const kvTags = tags.map(tag => new KVPair(tag));
+    const tags = {
+      one: 'valueOne',
+      two: 'valueTwo',
+    };
+    const kvTags = Object.entries(tags)
+      .map(([key, value]) => new KVPair({ key, value }));
 
     const error = new RateLimiterQuotaExceededAbciError(userId, tags);
 
