@@ -165,7 +165,7 @@ describe('checkTxHandlerFactory', () => {
       }
     });
 
-    it('should validate a State Transition with rate limiter and return banned response with code 4', async () => {
+    it('should validate a State Transition with rate limiter and throw user is banned error', async () => {
       lastBlockHeight = 111;
       lastBlockAppHash = Buffer.from('something');
       blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
