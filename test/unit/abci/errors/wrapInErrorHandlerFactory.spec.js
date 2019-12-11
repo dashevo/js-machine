@@ -1,7 +1,16 @@
+const {
+  common: {
+    KVPair,
+  },
+} = require('abci/types');
+
 const wrapInErrorHandlerFactory = require('../../../../lib/abci/errors/wrapInErrorHandlerFactory');
 
 const InternalAbciError = require('../../../../lib/abci/errors/InternalAbciError');
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
+const RateLimiterQuotaExceededAbciError = require(
+  '../../../../lib/abci/errors/RateLimiterQuotaExceededAbciError',
+);
 
 describe('wrapInErrorHandlerFactory', () => {
   let loggerMock;
@@ -40,6 +49,7 @@ describe('wrapInErrorHandlerFactory', () => {
           message: 'Internal error',
         },
       }),
+      tags: [],
     });
   });
 
@@ -59,6 +69,7 @@ describe('wrapInErrorHandlerFactory', () => {
           data: error.getData(),
         },
       }),
+      tags: [],
     });
   });
 
@@ -78,6 +89,32 @@ describe('wrapInErrorHandlerFactory', () => {
           data: error.getData(),
         },
       }),
+      tags: [],
+    });
+  });
+
+  it('should tag response if error have them', async () => {
+    const data = { sample: 'data' };
+    const tags = [
+      { key: 'one', value: 'valueOne' },
+      { key: 'two', value: 'valueTwo' },
+    ];
+    const kvTags = tags.map(tag => new KVPair(tag));
+    const error = new RateLimiterQuotaExceededAbciError(data, tags);
+
+    methodMock.throws(error);
+
+    const response = await handler(request);
+
+    expect(response).to.deep.equal({
+      code: error.getCode(),
+      log: JSON.stringify({
+        error: {
+          message: error.getMessage(),
+          data: error.getData(),
+        },
+      }),
+      tags: kvTags,
     });
   });
 });
