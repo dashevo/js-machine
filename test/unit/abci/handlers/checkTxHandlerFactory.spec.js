@@ -56,13 +56,13 @@ describe('checkTxHandlerFactory', () => {
 
     rateLimiterMock = new RateLimiterMock(this.sinon);
 
-    checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterMock, false);
-
-    db = level('./db/state-test', { valueEncoding: 'binary' });
-
     lastBlockHeight = 1;
     lastBlockAppHash = Buffer.from('something');
     blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
+
+    checkTxHandler = checkTxHandlerFactory(dppMock, blockchainState, rateLimiterMock, false);
+
+    db = level('./db/state-test', { valueEncoding: 'binary' });
   });
 
   afterEach(async () => {
@@ -71,7 +71,7 @@ describe('checkTxHandlerFactory', () => {
   });
 
   it('should validate a State Transition and return response with code 0', async () => {
-    const response = await checkTxHandler(request, blockchainState);
+    const response = await checkTxHandler(request);
 
     expect(response).to.be.an.instanceOf(ResponseCheckTx);
     expect(response.code).to.equal(0);
@@ -81,7 +81,7 @@ describe('checkTxHandlerFactory', () => {
 
   it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
     try {
-      await checkTxHandler({}, blockchainState);
+      await checkTxHandler({});
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
@@ -101,7 +101,7 @@ describe('checkTxHandlerFactory', () => {
     dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
-      await checkTxHandler(request, blockchainState);
+      await checkTxHandler(request);
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
@@ -119,7 +119,7 @@ describe('checkTxHandlerFactory', () => {
     dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
-      await checkTxHandler(request, blockchainState);
+      await checkTxHandler(request);
 
       expect.fail('should throw an error');
     } catch (e) {
@@ -129,9 +129,9 @@ describe('checkTxHandlerFactory', () => {
 
   describe('with rate limiter', () => {
     it('should validate a State Transition with rate limiter and return response with code 0', async () => {
-      checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterMock, true);
+      checkTxHandler = checkTxHandlerFactory(dppMock, blockchainState, rateLimiterMock, true);
 
-      const response = await checkTxHandler(request, blockchainState);
+      const response = await checkTxHandler(request);
 
       expect(response).to.be.an.instanceOf(ResponseCheckTx);
       expect(response.code).to.equal(0);
@@ -147,12 +147,12 @@ describe('checkTxHandlerFactory', () => {
       rateLimiterMock.getBannedKey.returns('rateLimitedBanKey');
       rateLimiterMock.isQuotaExceeded.resolves(true);
 
-      checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterMock, true);
+      checkTxHandler = checkTxHandlerFactory(dppMock, blockchainState, rateLimiterMock, true);
 
       const { userId } = stateTransitionFixture.documents[0];
 
       try {
-        await checkTxHandler(request, blockchainState);
+        await checkTxHandler(request);
         expect.fail('Error was not thrown');
       } catch (e) {
         expect(e).to.be.an.instanceOf(RateLimiterQuotaExceededAbciError);
@@ -173,12 +173,12 @@ describe('checkTxHandlerFactory', () => {
 
       rateLimiterMock.isBannedUser.resolves(true);
 
-      checkTxHandler = checkTxHandlerFactory(dppMock, rateLimiterMock, true);
+      checkTxHandler = checkTxHandlerFactory(dppMock, blockchainState, rateLimiterMock, true);
 
       const { userId } = stateTransitionFixture.documents[0];
 
       try {
-        await checkTxHandler(request, blockchainState);
+        await checkTxHandler(request);
         expect.fail('Error was not thrown');
       } catch (e) {
         expect(e).to.be.an.instanceOf(RateLimiterUserIsBannedAbciError);
