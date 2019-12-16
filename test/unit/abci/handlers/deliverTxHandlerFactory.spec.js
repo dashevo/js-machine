@@ -18,17 +18,28 @@ const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/er
 const getIdentityCreateSTFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture');
 const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFixture');
 const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
+const getDocumentFixture = require('@dashevo/dpp/lib/test/fixtures/getDocumentsFixture');
 
 const deliverTxHandlerFactory = require('../../../../lib/abci/handlers/deliverTxHandlerFactory');
 const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateStatePromiseClientMock');
 
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
+const RateLimiterQuotaExceededAbciError = require(
+  '../../../../lib/abci/errors/RateLimiterQuotaExceededAbciError',
+);
+const RateLimiterUserIsBannedAbciError = require(
+  '../../../../lib/abci/errors/RateLimiterUserIsBannedAbciError',
+);
+
+const RateLimiterMock = require('../../../../lib/test/mock/RateLimiterMock');
 
 describe('deliverTxHandlerFactory', () => {
   let deliverTxHandler;
   let driveUpdateStateClient;
   let request;
+  let dataContractRequest;
+  let documentRequest;
   let identityRequest;
   let blockHeight;
   let blockHash;
@@ -36,28 +47,37 @@ describe('deliverTxHandlerFactory', () => {
   let blockchainStateMock;
   let createIdentityStateTransitionFixture;
   let stateTransitionFixture;
+  let stateTransitionDataContractFixture;
   let identityRepositoryMock;
   let identityFixture;
   let blockExecutionDBTransactionsMock;
   let dbTransaction;
   let dpp;
+  let rateLimiterMock;
 
   beforeEach(function beforeEach() {
     const dataContractFixture = getDataContractFixture();
+    const documentFixture = getDocumentFixture();
+    identityFixture = getIdentityFixture();
 
     dpp = new DashPlatformProtocol();
-    identityFixture = getIdentityFixture();
-    createIdentityStateTransitionFixture = getIdentityCreateSTFixture();
+    stateTransitionFixture = dpp.document.createStateTransition(documentFixture);
+    stateTransitionDataContractFixture = dpp
+      .dataContract.createStateTransition(dataContractFixture);
 
-    stateTransitionFixture = dpp.dataContract.createStateTransition(dataContractFixture);
+    createIdentityStateTransitionFixture = getIdentityCreateSTFixture();
 
     identityRepositoryMock = {
       fetch: this.sinon.stub(),
       store: this.sinon.stub(),
     };
 
-    request = {
+    documentRequest = {
       tx: stateTransitionFixture.serialize(),
+    };
+
+    dataContractRequest = {
+      tx: stateTransitionDataContractFixture.serialize(),
     };
 
     identityRequest = {
@@ -69,6 +89,11 @@ describe('deliverTxHandlerFactory', () => {
       .stateTransition
       .createFromSerialized
       .resolves(stateTransitionFixture);
+    dppMock
+      .stateTransition
+      .createFromSerialized
+      .withArgs(stateTransitionDataContractFixture.serialize())
+      .resolves(stateTransitionDataContractFixture);
     dppMock
       .stateTransition
       .createFromSerialized
@@ -97,17 +122,21 @@ describe('deliverTxHandlerFactory', () => {
       getIdentityTransaction: this.sinon.stub().returns(dbTransaction),
     };
 
+    rateLimiterMock = new RateLimiterMock(this.sinon);
+
     deliverTxHandler = deliverTxHandlerFactory(
       dppMock,
       driveUpdateStateClient,
       blockchainStateMock,
       identityRepositoryMock,
       blockExecutionDBTransactionsMock,
+      rateLimiterMock,
+      false,
     );
   });
 
-  it('should apply State Transition and return response with code 0', async () => {
-    const response = await deliverTxHandler(request);
+  it('should apply a document State Transition and return response with code 0', async () => {
+    const response = await deliverTxHandler(documentRequest);
 
     const applyStateTransitionRequest = new ApplyStateTransitionRequest();
 
@@ -116,6 +145,64 @@ describe('deliverTxHandlerFactory', () => {
 
     applyStateTransitionRequest.setStateTransition(
       stateTransitionFixture.serialize(),
+    );
+
+    expect(response).to.be.an.instanceOf(ResponseDeliverTx);
+    expect(response.code).to.equal(0);
+
+    expect(driveUpdateStateClient.applyStateTransition).to.be.calledOnceWith(
+      applyStateTransitionRequest,
+    );
+
+    expect(identityRepositoryMock.store).to.be.not.called();
+    expect(identityRepositoryMock.fetch).to.be.not.called();
+  });
+
+  it('should apply a document State Transition with rate limiter and return response with code 0', async () => {
+    deliverTxHandler = deliverTxHandlerFactory(
+      dppMock,
+      driveUpdateStateClient,
+      blockchainStateMock,
+      identityRepositoryMock,
+      blockExecutionDBTransactionsMock,
+      rateLimiterMock,
+      true,
+    );
+
+    const response = await deliverTxHandler(documentRequest);
+
+    const applyStateTransitionRequest = new ApplyStateTransitionRequest();
+
+    applyStateTransitionRequest.setBlockHeight(blockHeight);
+    applyStateTransitionRequest.setBlockHash(blockHash);
+
+    applyStateTransitionRequest.setStateTransition(
+      stateTransitionFixture.serialize(),
+    );
+
+    expect(response).to.be.an.instanceOf(ResponseDeliverTx);
+    expect(response.code).to.equal(0);
+    expect(response.tags.length).to.be.equal(1);
+    expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(documentRequest.tx);
+
+    expect(driveUpdateStateClient.applyStateTransition).to.be.calledOnceWith(
+      applyStateTransitionRequest,
+    );
+
+    expect(identityRepositoryMock.store).to.be.not.called();
+    expect(identityRepositoryMock.fetch).to.be.not.called();
+  });
+
+  it('should apply a data contract State Transition and return response with code 0', async () => {
+    const response = await deliverTxHandler(dataContractRequest);
+
+    const applyStateTransitionRequest = new ApplyStateTransitionRequest();
+
+    applyStateTransitionRequest.setBlockHeight(blockHeight);
+    applyStateTransitionRequest.setBlockHash(blockHash);
+
+    applyStateTransitionRequest.setStateTransition(
+      stateTransitionDataContractFixture.serialize(),
     );
 
     expect(response).to.be.an.instanceOf(ResponseDeliverTx);
@@ -142,7 +229,7 @@ describe('deliverTxHandlerFactory', () => {
     driveUpdateStateClient.applyStateTransition.rejects(grpcClientError);
 
     try {
-      await deliverTxHandler(request);
+      await deliverTxHandler(documentRequest);
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
@@ -166,7 +253,7 @@ describe('deliverTxHandlerFactory', () => {
     driveUpdateStateClient.applyStateTransition.rejects(grpcClientError);
 
     try {
-      await deliverTxHandler(request);
+      await deliverTxHandler(documentRequest);
 
       expect.fail('should throw an error');
     } catch (e) {
@@ -196,7 +283,7 @@ describe('deliverTxHandlerFactory', () => {
     dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
-      await deliverTxHandler(request);
+      await deliverTxHandler(documentRequest);
 
       expect.fail('should throw InvalidArgumentAbciError error');
     } catch (e) {
@@ -214,7 +301,7 @@ describe('deliverTxHandlerFactory', () => {
     dppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
-      await deliverTxHandler(request);
+      await deliverTxHandler(documentRequest);
 
       expect.fail('should throw an error');
     } catch (e) {
@@ -272,5 +359,64 @@ describe('deliverTxHandlerFactory', () => {
       expect(e.getMessage()).to.equal('Invalid argument: Unknown State Transition');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
     }
+  });
+
+  describe('with rate limiter', () => {
+    it('should validate a State Transition with rate limiter and throw quota exceeded error', async () => {
+      rateLimiterMock.getBannedKey.returns('rateLimitedBanKey');
+      rateLimiterMock.isQuotaExceeded.resolves(true);
+
+      deliverTxHandler = deliverTxHandlerFactory(
+        dppMock,
+        driveUpdateStateClient,
+        blockchainStateMock,
+        identityRepositoryMock,
+        blockExecutionDBTransactionsMock,
+        rateLimiterMock,
+        true,
+      );
+
+      const { userId } = stateTransitionFixture.documents[0];
+
+      try {
+        await deliverTxHandler(documentRequest);
+        expect.fail('Error was not thrown');
+      } catch (e) {
+        expect(e).to.be.an.instanceOf(RateLimiterQuotaExceededAbciError);
+        expect(e.getCode()).to.equal(AbciError.CODES.RATE_LIMITER_QUOTA_EXCEEDED);
+        expect(e.getUserId()).to.equal(userId);
+        expect(e.data).to.deep.equal({ userId });
+        expect(e.tags).to.deep.equal({
+          rateLimitedBanKey: userId,
+          bannedUserIds: userId,
+        });
+      }
+    });
+
+    it('should validate a State Transition with rate limiter and throw user is banned error', async () => {
+      rateLimiterMock.isBannedUser.resolves(true);
+
+      deliverTxHandler = deliverTxHandlerFactory(
+        dppMock,
+        driveUpdateStateClient,
+        blockchainStateMock,
+        identityRepositoryMock,
+        blockExecutionDBTransactionsMock,
+        rateLimiterMock,
+        true,
+      );
+
+      const { userId } = stateTransitionFixture.documents[0];
+
+      try {
+        await deliverTxHandler(documentRequest);
+        expect.fail('Error was not thrown');
+      } catch (e) {
+        expect(e).to.be.an.instanceOf(RateLimiterUserIsBannedAbciError);
+        expect(e.getCode()).to.equal(AbciError.CODES.RATE_LIMITER_BANNED);
+        expect(e.getUserId()).to.equal(userId);
+        expect(e.data).to.deep.equal({ userId });
+      }
+    });
   });
 });
