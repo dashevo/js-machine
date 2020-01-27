@@ -45,7 +45,7 @@
     "sinon-chai": "^3.3.0"
   },
   "dependencies": {
-    "@dashevo/dpp": "0.10.0-dev.12",
+    "@dashevo/dpp": "0.10.0",
     "@dashevo/drive-grpc": "^0.3.0",
     "@dashevo/grpc-common": "^0.2.0",
     "abci": "^5.0.1",
