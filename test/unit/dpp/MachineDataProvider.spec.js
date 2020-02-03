@@ -1,15 +1,18 @@
-const DataProvider = require('../../../lib/dpp/DataProvider');
+const MachineDataProvider = require('../../../lib/dpp/MachineDataProvider');
 
-describe('DataProvider', () => {
+describe('MachineDataProvider', () => {
   let contract;
   let contractId;
   let dataProvider;
   let contractCacheMock;
   let driveApiClientMock;
+  let identityRepositoryMock;
+  let identity;
 
   beforeEach(function beforeEach() {
     contractId = '123';
     contract = {};
+    identity = 'identity';
 
     contractCacheMock = {
       set: this.sinon.stub(),
@@ -20,7 +23,15 @@ describe('DataProvider', () => {
       request: this.sinon.stub(),
     };
 
-    dataProvider = new DataProvider(driveApiClientMock, contractCacheMock);
+    identityRepositoryMock = {
+      fetch: this.sinon.stub(),
+    };
+
+    dataProvider = new MachineDataProvider(
+      driveApiClientMock,
+      contractCacheMock,
+      identityRepositoryMock,
+    );
   });
 
   describe('#fetchDataContract', () => {
@@ -83,6 +94,19 @@ describe('DataProvider', () => {
       const result = await dataProvider.fetchDataContract(contractId);
 
       expect(result).to.be.null();
+    });
+  });
+
+  describe('#fetchIdentity', () => {
+    it('should fetch identity from repository', async () => {
+      const id = 'id';
+      identityRepositoryMock.fetch.resolves(identity);
+
+      const result = await dataProvider.fetchIdentity(id);
+
+      expect(result).to.equal(identity);
+
+      expect(identityRepositoryMock.fetch).to.be.calledOnceWithExactly(id);
     });
   });
 });
