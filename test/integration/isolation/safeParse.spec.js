@@ -3,8 +3,8 @@ const DashPlatformProtocol = require('@dashevo/dpp');
 
 const getIdentityCreateSTFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture');
 
-const createSafeParse = require('../../../lib/isolation/safeParse');
 const createDataProviderMock = require('@dashevo/dpp/lib/test/mocks/createDataProviderMock');
+const createSafeDPP = require('../../../lib/isolation/safeParse');
 
 describe('safeParse', function () {
   let identityCreateTransitionFixture;
@@ -18,7 +18,7 @@ describe('safeParse', function () {
 
   it('should parse state transition', async () => {
     console.time('create');
-    const safeParse = await createSafeParse(dataProvideMock);
+    const isolatedDPP = await createSafeDPP(dataProvideMock);
     console.timeEnd('create');
     const serializedIdentityCreateST = getIdentityCreateSTFixture().serialize();
 
@@ -26,15 +26,21 @@ describe('safeParse', function () {
     // const st = await dpp.stateTransition.createFromSerialized(serializedIdentityCreateST, { skipValidation: true });
     // console.log(st);
     console.time('parse');
-    const parsedTransition = await safeParse(serializedIdentityCreateST, getIdentityCreateSTFixture().toJSON());
+    const parsedTransition = await isolatedDPP
+      .stateTransition
+      .createFromSerialized(
+        serializedIdentityCreateST.toString('hex'),
+        { skipValidation: true },
+      );
     console.timeEnd('parse');
 
+    console.log(parsedTransition);
     expect(parsedTransition).to.be.deep.equal(getIdentityCreateSTFixture());
   });
 
   it('Should stop execution if dpp validation takes too much memory', async () => {
     console.time('create');
-    const safeParse = await createSafeParse(dataProvideMock);
+    const safeParse = await createSafeDPP(dataProvideMock);
     console.timeEnd('create');
     const serializedIdentityCreateST = getIdentityCreateSTFixture().serialize();
 
