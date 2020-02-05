@@ -51,7 +51,6 @@
     "abci": "^5.0.1",
     "awilix": "^4.2.2",
     "browserify": "^16.5.0",
-    "buffer": "^5.4.3",
     "cbor": "^5.0.1",
     "dotenv-expand": "^5.1.0",
     "dotenv-safe": "^8.1.0",
@@ -60,7 +59,6 @@
     "level-rocksdb": "^4.0.0",
     "level-transactions": "^2.1.4",
     "lru-cache": "^5.1.1",
-    "setimmediate": "^1.0.5",
-    "typedarray-to-buffer": "^3.1.5"
+    "setimmediate": "^1.0.5"
   }
 }
