@@ -45,18 +45,21 @@
     "sinon-chai": "^3.3.0"
   },
   "dependencies": {
-    "@dashevo/dpp": "0.10.0-dev.12",
+    "@dashevo/dpp": "0.10.1",
     "@dashevo/drive-grpc": "^0.3.0",
     "@dashevo/grpc-common": "^0.2.0",
     "abci": "^5.0.1",
     "awilix": "^4.2.2",
+    "browserify": "^16.5.0",
+    "buffer": "^5.4.3",
     "cbor": "^5.0.1",
     "dotenv-expand": "^5.1.0",
     "dotenv-safe": "^8.1.0",
+    "isolated-vm": "^3.1.2",
     "jayson": "^3.1.1",
     "level-rocksdb": "^4.0.0",
     "level-transactions": "^2.1.4",
     "lru-cache": "^5.1.1",
-    "isolated-vm": "^3.1.2"
+    "typedarray-to-buffer": "^3.1.5"
   }
 }
