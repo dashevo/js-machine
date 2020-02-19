@@ -1,4 +1,5 @@
 const sinon = require('sinon');
+const MissingOptionError = require('@dashevo/dpp/lib/errors/MissingOptionError');
 
 const getIdentityCreateSTFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture');
 
@@ -42,11 +43,34 @@ describe('createIsolatedDpp', function () {
     expect(dataProvideMock.fetchIdentity.calledOnce).to.be.true();
   });
 
-  it('Should stop execution if dpp validation takes too much memory', async () => {
+  it('should throw correct error', async () => {
+    const isolatedDpp = await createIsolatedDpp(dataProvideMock);
+    const identityCreateStObject = getIdentityCreateSTFixture().toJSON();
+    identityCreateStObject.publicKeys = null;
+    identityCreateStObject.identityType = 10123;
+
+    let error;
+
+    try {
+      await isolatedDpp
+        .stateTransition
+        .createFromObject(
+          identityCreateStObject,
+        );
+    } catch (e) {
+      error = e;
+    }
+
+    console.error(error);
+    expect(error).to.be.an.instanceOf(MissingOptionError);
+    expect(error.message).to.be.equal('Can\'t create State Transition because Data Provider is not set, use setDataProvider method');
+  });
+
+  it('should stop execution if dpp validation takes too much memory', async () => {
     throw new Error('Not implemented');
   });
 
-  it('Should stop execution if schema takes too much time', async () => {
+  it('should stop execution if schema takes too much time', async () => {
     throw new Error('Not implemented');
   });
 });
