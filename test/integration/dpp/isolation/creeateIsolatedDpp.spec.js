@@ -1,5 +1,9 @@
 const sinon = require('sinon');
 const MissingOptionError = require('@dashevo/dpp/lib/errors/MissingOptionError');
+const DPP = require('@dashevo/dpp');
+const IdentityPublicKey = require('@dashevo/dpp/lib/identity/IdentityPublicKey');
+const ValidationResult = require('@dashevo/dpp/lib/validation/ValidationResult');
+const { PrivateKey } = require('@dashevo/dashcore-lib');
 
 const getIdentityCreateSTFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture');
 
@@ -8,20 +12,22 @@ const createIsolatedDpp = require('../../../../lib/dpp/isolation/createIsolatedD
 
 describe('createIsolatedDpp', function () {
   let dataProvideMock;
+  let dpp;
   this.timeout(100000);
 
   beforeEach(() => {
     dataProvideMock = createDataProviderMock(sinon);
+    dpp = new DPP({ dataProvider: dataProvideMock });
   });
 
   it('should parse state transition', async () => {
     const isolatedDpp = await createIsolatedDpp(dataProvideMock);
-    const serializedIdentityCreateST = getIdentityCreateSTFixture().serialize();
+    const serializedIdentityCreateST = getIdentityCreateSTFixture().serialize().toString('hex');
 
     const parsedTransition = await isolatedDpp
       .stateTransition
       .createFromSerialized(
-        serializedIdentityCreateST.toString('hex'),
+        serializedIdentityCreateST,
         { skipValidation: true },
       );
 
@@ -30,24 +36,35 @@ describe('createIsolatedDpp', function () {
 
   it('should create a reference to the data provider and call it when needed', async () => {
     const isolatedDpp = await createIsolatedDpp(dataProvideMock);
-    const serializedIdentityCreateST = getIdentityCreateSTFixture().serialize();
+    const identityCreateSTFixture = getIdentityCreateSTFixture();
+    const privateKey = new PrivateKey();
+    identityCreateSTFixture.publicKeys = [new IdentityPublicKey({
+      id: 1,
+      type: IdentityPublicKey.TYPES.ECDSA_SECP256K1,
+      data: privateKey.toPublicKey().toBuffer().toString('base64'),
+      isEnabled: true,
+    })];
+    identityCreateSTFixture.sign(identityCreateSTFixture.getPublicKeys()[0], privateKey);
+    const serializedIdentityCreateST = identityCreateSTFixture.serialize().toString('hex');
 
     const parsedTransition = await isolatedDpp
       .stateTransition
       .createFromSerialized(
-        serializedIdentityCreateST.toString('hex'),
-        { skipValidation: true },
+        serializedIdentityCreateST,
       );
 
-    expect(parsedTransition).to.be.deep.equal(getIdentityCreateSTFixture());
-    expect(dataProvideMock.fetchIdentity.calledOnce).to.be.true();
+    // This won't work because we need to pass an instance to validateData instead of a raw object
+    const validationResult = await isolatedDpp.stateTransition.validateData(parsedTransition);
+
+    expect(dataProvideMock.fetchIdentity.callCount).to.be.equal(1);
+    expect(validationResult).to.be.instanceOf(ValidationResult);
   });
 
   it('should throw correct error', async () => {
     const isolatedDpp = await createIsolatedDpp(dataProvideMock);
     const identityCreateStObject = getIdentityCreateSTFixture().toJSON();
-    identityCreateStObject.publicKeys = null;
-    identityCreateStObject.identityType = 10123;
+    // identityCreateStObject.publicKeys = null;
+    // identityCreateStObject.identityType = 10123;
 
     let error;
 
@@ -70,7 +87,7 @@ describe('createIsolatedDpp', function () {
     throw new Error('Not implemented');
   });
 
-  it('should stop execution if schema takes too much time', async () => {
+  it('should stop execution if dpp validation takes too much time', async () => {
     throw new Error('Not implemented');
   });
 });
