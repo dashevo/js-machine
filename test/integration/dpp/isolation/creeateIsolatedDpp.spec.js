@@ -9,10 +9,10 @@ const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFi
 // The regexp below explodes exponentially.
 // On a string that contains 'x' with length above 30
 // it will take at least several seconds on a modern hardware.
-// It takes about 4 seconds with 29 symbols on 2014 MacBook Pro,
-// And with 30 symbols it's already ~15 seconds
+// It takes about 3 seconds with 29 symbols on 2019 16" MacBook Pro,
+// And with 30 symbols it's already ~6 seconds, and with 31 symbols it's 12 sec
 const exponentialPattern = '(x+x+)+y';
-const stringThatExponentialyBlowsRegexp = 'x'.repeat(30);
+const stringThatExponentialyBlowsRegexp = 'x'.repeat(31);
 
 const getIdentityCreateSTFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture');
 
@@ -109,39 +109,49 @@ describe('createIsolatedDpp', function () {
     idenitity.publicKeys.push(identityPublicKey);
     // Identity init
 
+    // Creating dangerous contract fixture
     const contractId = generateRandomId();
     const dangerousDocSchema = {
       doc: {
-        str: {
-          type: 'string',
-          pattern: exponentialPattern,
+        properties: {
+          str: {
+            type: 'string',
+            pattern: exponentialPattern,
+          },
         },
+        additionalProperties: false,
       },
     };
     const contract = await dpp.dataContract.create(contractId, dangerousDocSchema);
-    dataProvideMock.fetchDataContract.resolves(contract.toJSON());
+    dataProvideMock.fetchDataContract.resolves(contract);
     const exponentialDoc = await dpp.document.create(
       contract,
-      generateRandomId(),
+      idenitity.getId(),
       'doc',
       { str: stringThatExponentialyBlowsRegexp },
     );
+
+    // Creating document that exploits dangerous contract
     const documentSt = await dpp.document.createStateTransition([exponentialDoc]);
     documentSt.sign(identityPublicKey, privateKey);
 
-    try {
-      const st2 = await dpp.stateTransition.createFromSerialized(documentSt.serialize().toString('hex'));
-    } catch (e) {
-      console.dir(e);
-    }
+    // try {
+    //   const st2 = await dpp.stateTransition.createFromSerialized(documentSt.serialize().toString('hex'));
+    // } catch (e) {
+    //   console.log('Failed to parse without isolation:');
+    //   console.dir(e);
+    // }
 
+    //console.time('c');
     let error;
     try {
       await isolatedDpp.stateTransition.createFromSerialized(documentSt.serialize().toString('hex'));
     } catch (e) {
       error = e;
     }
+    //console.timeEnd('c');
 
+    console.log('Error in the end:');
     console.dir(error);
     expect(error).to.be.equal('kek');
   });
