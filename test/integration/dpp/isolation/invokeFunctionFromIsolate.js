@@ -1,6 +1,4 @@
-const sinon = require('sinon');
-const { Reference, Isolate } = require('isolated-vm');
-const wait = require('@dashevo/dpp/lib/test/utils/wait');
+const { Isolate } = require('isolated-vm');
 const allocateRandomMemory = require('../../../../lib/test/util/allocateRandomMemory');
 const waitShim = require('../../../../lib/test/util/setTimeoutShim');
 
@@ -30,6 +28,13 @@ describe('invokeFunctionFromIsolate', function () {
         return;
       };
     `);
+    await context.evalClosure(`
+      global.setTimeout = function(timeout) {
+        return $0.apply(undefined, [timeout], { result: { promise: true } });
+      }`,
+    [timeout => new Promise((resolve) => {
+      setTimeout(resolve, timeout);
+    })], { arguments: { reference: true } });
 
     await context.eval(`
       global.allocateRandomMemory = ${allocateRandomMemory}
@@ -40,7 +45,7 @@ describe('invokeFunctionFromIsolate', function () {
     throw new Error('Not implemented');
   });
 
-  it('should stop execution after a timeout for an async function that makes call to an external reference', async () => {
+  it('should stop execution after a timeout for an async function', async () => {
     const timeout = 2000;
     let error;
 
@@ -50,7 +55,7 @@ describe('invokeFunctionFromIsolate', function () {
         jail,
         '',
         'wait',
-        [10000],
+        [5000],
         { timeout, arguments: { copy: true }, result: { promise: true, copy: true } },
       );
     } catch (e) {
@@ -62,6 +67,30 @@ describe('invokeFunctionFromIsolate', function () {
     expect(error.message).to.be.equal('Script execution timed out.');
     expect(timeSpent).to.be.greaterThan(timeout);
     expect(timeSpent).to.be.lessThan(timeout + 1000);
+  });
+
+  it('should stop execution after a timeout for an async function that makes call to an external reference', async () => {
+    const timeout = 2000;
+    let error;
+
+    const timeStart = Date.now();
+    try {
+      await invokeFunctionFromIsolate(
+        jail,
+        '',
+        'setTimeout',
+        [5000],
+        { timeout, arguments: { copy: true }, result: { promise: true, copy: true } },
+      );
+    } catch (e) {
+      error = e;
+    }
+    const timeSpent = Date.now() - timeStart;
+
+    expect(timeSpent).to.be.greaterThan(timeout);
+    expect(timeSpent).to.be.lessThan(timeout + 1000);
+    expect(error).to.be.instanceOf(Error);
+    expect(error.message).to.be.equal('Script execution timed out.');
   });
 
   it('should stop execution after a timeout for a sync function running inside the isolate', async () => {
@@ -85,7 +114,7 @@ describe('invokeFunctionFromIsolate', function () {
     expect(error).to.be.instanceOf(Error);
     expect(error.message).to.be.equal('Script execution timed out.');
     expect(timeSpent).to.be.greaterThan(timeout);
-    expect(timeSpent).to.be.lessThanOrEqual(timeout + 1000);
+    expect(timeSpent).to.be.lessThan(timeout + 1000);
   });
 
   it('should stop execution if memory is exceeded', async () => {
