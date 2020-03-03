@@ -18,17 +18,6 @@ describe('invokeFunctionFromIsolate', function () {
     context = await isolate.createContext();
     ({ global: jail } = context);
     await jail.set('global', jail.derefInto());
-    // await context.evalClosure(`
-    //   const externalWaitReference = $0;
-    //   global.wait = async function(timeout) {
-    //     log('timeout in isolate', timeout);
-    //     await externalWaitReference.apply(null, [ timeout ], { arguments: { copy: true }, result: { promise: true } });
-    //     log('waited');
-    //     return 123;
-    //   }
-    // `,
-    // [wait],
-    // { arguments: { reference: true } });
     await context.eval(`global.wait = ${waitShim}`);
     await context.evalClosure(`
       global.log = function(...args) {
@@ -48,15 +37,12 @@ describe('invokeFunctionFromIsolate', function () {
   });
 
   it('should call a given function from isolate with given arguments and return a result', () => {
-
+    throw new Error('Not implemented');
   });
 
   it('should stop execution after a timeout for an async function that makes call to an external reference', async () => {
     const timeout = 2000;
     let error;
-
-    console.log('CPU time:', (isolate.cpuTime[0] + isolate.cpuTime[1] / 1000 / 1000), 'seconds');
-    console.log('Wall time', (isolate.wallTime[0] + isolate.wallTime[1] / 1000 / 1000), 'seconds');
 
     const timeStart = Date.now();
     try {
@@ -72,13 +58,10 @@ describe('invokeFunctionFromIsolate', function () {
     }
     const timeSpent = Date.now() - timeStart;
 
-    console.log('CPU time:', (isolate.cpuTime[0] + isolate.cpuTime[1] / 1000 / 1000), 'seconds');
-    console.log('Wall time', (isolate.wallTime[0] + isolate.wallTime[1] / 1000 / 1000), 'seconds');
-
-    console.log('timeSpent:', timeSpent, 'milliseconds');
-
     expect(error).to.be.instanceOf(Error);
     expect(error.message).to.be.equal('Script execution timed out.');
+    expect(timeSpent).to.be.greaterThan(timeout);
+    expect(timeSpent).to.be.lessThan(timeout + 1000);
   });
 
   it('should stop execution after a timeout for a sync function running inside the isolate', async () => {
@@ -110,6 +93,7 @@ describe('invokeFunctionFromIsolate', function () {
     const memoryToAllocate = 180 * 1000 * 1000;
     let error;
 
+    // This invokation should be fine
     await invokeFunctionFromIsolate(
       jail,
       '',
@@ -119,6 +103,7 @@ describe('invokeFunctionFromIsolate', function () {
       { arguments: { copy: true }, result: { promise: true, copy: true } },
     );
 
+    // This one should crash
     try {
       await invokeFunctionFromIsolate(
         jail,
