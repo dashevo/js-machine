@@ -95,7 +95,7 @@ describe('createIsolatedDpp', function () {
   });
 
   it('should stop execution if dpp validation takes too much time', async () => {
-    const isolatedDpp = await createIsolatedDpp(dataProvideMock, 128, 1000);
+    const isolatedDpp = await createIsolatedDpp(dataProvideMock, 128, 100);
 
     // TODO: move this section to beforeEach
     const idenitity = getIdentityFixture();
@@ -142,14 +142,14 @@ describe('createIsolatedDpp', function () {
     //   console.dir(e);
     // }
 
-    //console.time('c');
+    console.time('c');
     let error;
     try {
       await isolatedDpp.stateTransition.createFromSerialized(documentSt.serialize().toString('hex'));
     } catch (e) {
       error = e;
     }
-    //console.timeEnd('c');
+    console.timeEnd('c');
 
     console.log('Error in the end:');
     console.dir(error);
