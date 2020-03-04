@@ -2,9 +2,9 @@ const { Isolate } = require('isolated-vm');
 const allocateRandomMemory = require('../../../../lib/test/util/allocateRandomMemory');
 const waitShim = require('../../../../lib/test/util/setTimeoutShim');
 
-const invokeFunctionFromIsolate = require('../../../../lib/dpp/isolation/invokeFunctionFromIsolate');
+const invokeFunctionFromIsolateSpec = require('../../../../lib/dpp/isolation/invokeFunctionFromIsolate');
 
-describe('invokeFunctionFromIsolate', function () {
+describe('invokeFunctionFromIsolate', function describe() {
   let isolate;
   let context;
   let jail;
@@ -51,7 +51,7 @@ describe('invokeFunctionFromIsolate', function () {
 
     const timeStart = Date.now();
     try {
-      await invokeFunctionFromIsolate(
+      await invokeFunctionFromIsolateSpec(
         jail,
         '',
         'wait',
@@ -75,7 +75,7 @@ describe('invokeFunctionFromIsolate', function () {
 
     const timeStart = Date.now();
     try {
-      await invokeFunctionFromIsolate(
+      await invokeFunctionFromIsolateSpec(
         jail,
         '',
         'setTimeout',
@@ -99,7 +99,7 @@ describe('invokeFunctionFromIsolate', function () {
     let error;
 
     try {
-      await invokeFunctionFromIsolate(
+      await invokeFunctionFromIsolateSpec(
         jail,
         '',
         'infiniteLoop',
@@ -123,7 +123,7 @@ describe('invokeFunctionFromIsolate', function () {
     let error;
 
     // This invokation should be fine
-    await invokeFunctionFromIsolate(
+    await invokeFunctionFromIsolateSpec(
       jail,
       '',
       'allocateRandomMemory',
@@ -134,7 +134,7 @@ describe('invokeFunctionFromIsolate', function () {
 
     // This one should crash
     try {
-      await invokeFunctionFromIsolate(
+      await invokeFunctionFromIsolateSpec(
         jail,
         '',
         'allocateRandomMemory',
