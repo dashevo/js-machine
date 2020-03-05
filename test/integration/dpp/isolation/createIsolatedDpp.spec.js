@@ -18,15 +18,18 @@ const getIdentityCreateSTFixture = require('@dashevo/dpp/lib/test/fixtures/getId
 
 const createDataProviderMock = require('@dashevo/dpp/lib/test/mocks/createDataProviderMock');
 const createIsolatedDpp = require('../../../../lib/dpp/isolation/createIsolatedDpp');
+const invokeFunctionFromIsolate = require('../../../../lib/dpp/isolation/invokeFunctionFromIsolate');
 
 describe('createIsolatedDpp', function () {
   let dataProvideMock;
   let dpp;
+  let isolate;
   this.timeout(100000);
 
   beforeEach(() => {
     dataProvideMock = createDataProviderMock(sinon);
     dpp = new DPP({ dataProvider: dataProvideMock });
+    isolate = new Isolate();
   });
 
   it('should parse state transition', async () => {
@@ -154,5 +157,13 @@ describe('createIsolatedDpp', function () {
     console.log('Error in the end:');
     console.dir(error);
     expect(error).to.be.equal('kek');
+  });
+  it('should invoke from global', async () => {
+    const context = await isolate.createContext();
+    const { global: jail } = context;
+    await jail.set('global', jail.derefInto());
+    await context.eval('global.myFunction = function myFunction(){ return true; }');
+
+    await invokeFunctionFromIsolate(jail, '', 'myFunction', []);
   });
 });
