@@ -6,16 +6,11 @@ const {
 
 const DashPlatformProtocol = require('@dashevo/dpp');
 
-const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
-const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
 const getDocumentFixture = require('@dashevo/dpp/lib/test/fixtures/getDocumentsFixture');
 const level = require('level-rocksdb');
-const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
-const DocumentsStateTransition = require('@dashevo/dpp/lib/document/stateTransition/DocumentsStateTransition');
 
 const checkTxHandlerFactory = require('../../../../lib/abci/handlers/checkTxHandlerFactory');
 
-const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
 const RateLimiterQuotaExceededAbciError = require(
   '../../../../lib/abci/errors/RateLimiterQuotaExceededAbciError',
@@ -31,13 +26,13 @@ const RateLimiterMock = require('../../../../lib/test/mock/RateLimiterMock');
 describe('checkTxHandlerFactory', () => {
   let checkTxHandler;
   let request;
-  let dppMock;
   let stateTransitionFixture;
   let db;
   let blockchainState;
   let lastBlockHeight;
   let lastBlockAppHash;
   let rateLimiterMock;
+  let unserializeStateTransitionMock;
 
   beforeEach(function beforeEach() {
     const dpp = new DashPlatformProtocol();
@@ -48,11 +43,8 @@ describe('checkTxHandlerFactory', () => {
       tx: stateTransitionFixture.serialize(),
     };
 
-    dppMock = createDPPMock(this.sinon);
-    dppMock
-      .stateTransition
-      .createFromSerialized
-      .callsFake(async () => new DocumentsStateTransition(documentFixture));
+    unserializeStateTransitionMock = this.sinon.stub()
+      .resolves(stateTransitionFixture);
 
     rateLimiterMock = new RateLimiterMock(this.sinon);
 
@@ -60,7 +52,12 @@ describe('checkTxHandlerFactory', () => {
     lastBlockAppHash = Buffer.from('something');
     blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
 
-    checkTxHandler = checkTxHandlerFactory(dppMock, blockchainState, rateLimiterMock, false);
+    checkTxHandler = checkTxHandlerFactory(
+      unserializeStateTransitionMock,
+      blockchainState,
+      rateLimiterMock,
+      false,
+    );
 
     db = level('./db/state-test', { valueEncoding: 'binary' });
   });
@@ -76,67 +73,24 @@ describe('checkTxHandlerFactory', () => {
     expect(response).to.be.an.instanceOf(ResponseCheckTx);
     expect(response.code).to.equal(0);
 
-    expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
-  });
-
-  it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
-    try {
-      await checkTxHandler({});
-
-      expect.fail('should throw InvalidArgumentAbciError error');
-    } catch (e) {
-      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
-      expect(e.getMessage()).to.equal('Invalid argument: State Transition is not specified');
-      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
-    }
-  });
-
-  it('should throw InvalidArgumentAbciError if State Transition is invalid', async () => {
-    const consensusError = new ConsensusError('Invalid state transition');
-    const error = new InvalidStateTransitionError(
-      [consensusError],
-      stateTransitionFixture.toJSON(),
-    );
-
-    dppMock.stateTransition.createFromSerialized.throws(error);
-
-    try {
-      await checkTxHandler(request);
-
-      expect.fail('should throw InvalidArgumentAbciError error');
-    } catch (e) {
-      expect(e).to.be.instanceOf(InvalidArgumentAbciError);
-      expect(e.getMessage()).to.equal('Invalid argument: State Transition is invalid');
-      expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
-      expect(e.getData()).to.deep.equal({
-        errors: [consensusError],
-      });
-    }
-  });
-
-  it('should throw the error from createFromSerialized if throws not InvalidStateTransitionError', async () => {
-    const error = new Error('Custom error');
-    dppMock.stateTransition.createFromSerialized.throws(error);
-
-    try {
-      await checkTxHandler(request);
-
-      expect.fail('should throw an error');
-    } catch (e) {
-      expect(e).to.be.equal(error);
-    }
+    expect(unserializeStateTransitionMock).to.be.calledOnceWith(request.tx);
   });
 
   describe('with rate limiter', () => {
     it('should validate a State Transition with rate limiter and return response with code 0', async () => {
-      checkTxHandler = checkTxHandlerFactory(dppMock, blockchainState, rateLimiterMock, true);
+      checkTxHandler = checkTxHandlerFactory(
+        unserializeStateTransitionMock,
+        blockchainState,
+        rateLimiterMock,
+        true,
+      );
 
       const response = await checkTxHandler(request);
 
       expect(response).to.be.an.instanceOf(ResponseCheckTx);
       expect(response.code).to.equal(0);
 
-      expect(dppMock.stateTransition.createFromSerialized).to.be.calledOnceWith(request.tx);
+      expect(unserializeStateTransitionMock).to.be.calledOnceWith(request.tx);
     });
 
     it('should validate a State Transition with rate limiter and throw quota exceeded error', async () => {
@@ -147,7 +101,12 @@ describe('checkTxHandlerFactory', () => {
       rateLimiterMock.getBannedKey.returns('rateLimitedBanKey');
       rateLimiterMock.isQuotaExceeded.resolves(true);
 
-      checkTxHandler = checkTxHandlerFactory(dppMock, blockchainState, rateLimiterMock, true);
+      checkTxHandler = checkTxHandlerFactory(
+        unserializeStateTransitionMock,
+        blockchainState,
+        rateLimiterMock,
+        true,
+      );
 
       const { userId } = stateTransitionFixture.documents[0];
 
@@ -173,7 +132,12 @@ describe('checkTxHandlerFactory', () => {
 
       rateLimiterMock.isBannedUser.resolves(true);
 
-      checkTxHandler = checkTxHandlerFactory(dppMock, blockchainState, rateLimiterMock, true);
+      checkTxHandler = checkTxHandlerFactory(
+        unserializeStateTransitionMock,
+        blockchainState,
+        rateLimiterMock,
+        true,
+      );
 
       const { userId } = stateTransitionFixture.documents[0];
 
