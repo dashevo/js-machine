@@ -158,12 +158,4 @@ describe('createIsolatedDpp', function () {
     console.dir(error);
     expect(error).to.be.equal('kek');
   });
-  it('should invoke from global', async () => {
-    const context = await isolate.createContext();
-    const { global: jail } = context;
-    await jail.set('global', jail.derefInto());
-    await context.eval('global.myFunction = function myFunction(){ return true; }');
-
-    await invokeFunctionFromIsolate(jail, '', 'myFunction', []);
-  });
 });

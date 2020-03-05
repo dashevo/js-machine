@@ -148,4 +148,11 @@ describe('invokeFunctionFromIsolate', function () {
     expect(error).to.be.instanceOf(Error);
     expect(error.message).to.be.equal('Isolate was disposed during execution due to memory limit');
   });
+
+  it('should invoke from global', async () => {
+    await jail.set('global', jail.derefInto());
+    await context.eval('global.myFunction = function myFunction(){ return true; }');
+
+    await invokeFunctionFromIsolate(jail, '', 'myFunction', []);
+  });
 });
