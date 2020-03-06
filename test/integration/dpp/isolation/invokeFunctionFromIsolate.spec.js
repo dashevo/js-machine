@@ -41,9 +41,7 @@ describe('invokeFunctionFromIsolate', function describe() {
     `);
   });
 
-  it('should call a given function from isolate with given arguments and return a result', () => {
-    throw new Error('Not implemented');
-  });
+  it('should call a given function from isolate with given arguments and return a result');
 
   it('should stop execution after a timeout for an async function', async () => {
     const timeout = 2000;

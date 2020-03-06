@@ -86,21 +86,15 @@ describe('IsolatedDpp', function main() {
 
   describe('dataContract', () => {
     describe('#create', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does');
     });
 
     describe('#createFromObject', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does');
     });
 
     describe('#validate', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does');
     });
 
     describe('#createFromSerialized', () => {
@@ -130,21 +124,15 @@ describe('IsolatedDpp', function main() {
 
   describe('document', () => {
     describe('#create', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does');
     });
 
     describe('#createFromObject', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does');
     });
 
     describe('#validate', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does');
     });
 
     describe('#createFromSerialized', () => {
@@ -175,21 +163,15 @@ describe('IsolatedDpp', function main() {
 
   describe('identity', () => {
     describe('#create', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does');
     });
 
     describe('#createFromObject', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does');
     });
 
     describe('#validate', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does');
     });
 
     describe('#createFromSerialized', () => {
@@ -254,21 +236,12 @@ describe('IsolatedDpp', function main() {
     });
 
     describe('#validate', () => {
-      it('should act the same way as not isolated dpp does when it is valid', async () => {
-        throw new Error('Not implemented');
-      });
-
-      it('should act the same way as not isolated dpp does when it is not valid', async () => {
-        throw new Error('Not implemented');
-      });
+      it('should act the same way as not isolated dpp does when it is valid');
+      it('should act the same way as not isolated dpp does when it is not valid');
     });
   });
 
-  it('should stop execution if dpp validation takes too much memory', async () => {
-    throw new Error('Not implemented');
-  });
+  it('should stop execution if dpp validation takes too much memory');
 
-  it('should stop execution if dpp validation takes too much time', async () => {
-    throw new Error('Not implemented');
-  });
+  it('should stop execution if dpp validation takes too much time');
 });
