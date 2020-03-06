@@ -1,3 +1,5 @@
+const { Isolate } = require('isolated-vm');
+
 const sinon = require('sinon');
 const MissingOptionError = require('@dashevo/dpp/lib/errors/MissingOptionError');
 const DPP = require('@dashevo/dpp');
