@@ -15,6 +15,7 @@ const InvalidDocumentError = require('@dashevo/dpp/lib/document/errors/InvalidDo
 const InvalidIdentityError = require('@dashevo/dpp/lib/identity/errors/InvalidIdentityError');
 
 const JsonSchemaError = require('@dashevo/dpp/lib/errors/JsonSchemaError');
+const InvalidDocumentTypeError = require('@dashevo/dpp/lib/errors/InvalidDocumentTypeError');
 
 const IsolatedDpp = require('../../../../lib/dpp/isolation/IsolatedDpp');
 const compileFileWithBrowserify = require(
@@ -69,12 +70,14 @@ describe('IsolatedDpp', function main() {
       },
     };
 
-    [document] = getDocumentsFixture();
     dataContract = getDataContractFixture();
+    [document] = getDocumentsFixture();
+    document.contractId = dataContract.getId();
     identity = getIdentityFixture();
     stateTransition = getIdentityCreateSTFixture();
 
     dataProviderMock = createDataProviderMock(this.sinon);
+    dataProviderMock.fetchDataContract.returns(dataContract);
 
     dpp = new DashPlatformProtocol({ dataProvider: dataProviderMock });
 
@@ -146,7 +149,7 @@ describe('IsolatedDpp', function main() {
 
     describe('#createFromSerialized', () => {
       it('should pass through validation result', async () => {
-        delete document.id;
+        delete document.type;
 
         try {
           await isolatedDpp.document.createFromSerialized(
@@ -157,7 +160,7 @@ describe('IsolatedDpp', function main() {
           expect(e).to.be.an.instanceOf(InvalidDocumentError);
 
           const [error] = e.getErrors();
-          expect(error).to.be.an.instanceOf(JsonSchemaError);
+          expect(error).to.be.an.instanceOf(InvalidDocumentTypeError);
         }
       });
 
