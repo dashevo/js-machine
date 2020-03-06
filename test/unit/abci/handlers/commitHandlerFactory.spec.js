@@ -7,6 +7,7 @@ const {
 const {
   CommitTransactionRequest,
 } = require('@dashevo/drive-grpc');
+const Long = require('long');
 
 const commitHandlerFactory = require('../../../../lib/abci/handlers/commitHandlerFactory');
 
@@ -24,7 +25,7 @@ describe('commitHandlerFactory', () => {
   let identityRepositoryMock;
 
   beforeEach(function beforeEach() {
-    blockHeight = 2;
+    blockHeight = Long.fromInt(42);
     blockHash = Buffer.alloc(0);
     appHash = Buffer.alloc(0);
 
@@ -55,7 +56,7 @@ describe('commitHandlerFactory', () => {
     expect(response.data).to.deep.equal(appHash);
 
     const commitTransactionRequest = new CommitTransactionRequest();
-    commitTransactionRequest.setBlockHeight(blockHeight);
+    commitTransactionRequest.setBlockHeight(blockHeight.toInt());
     commitTransactionRequest.setBlockHash(blockHash);
 
     expect(driveUpdateStateClientMock.commitTransaction).to.be.calledOnceWith(

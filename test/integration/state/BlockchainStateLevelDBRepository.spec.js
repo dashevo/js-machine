@@ -1,5 +1,6 @@
 const level = require('level-rocksdb');
 const cbor = require('cbor');
+const Long = require('long');
 
 const BlockchainStateLevelDBRepository = require('../../../lib/state/BlockchainStateLevelDBRepository');
 const BlockchainState = require('../../../lib/state/BlockchainState');
@@ -16,7 +17,7 @@ describe('BlockchainStateLevelDBRepository', () => {
 
     repository = new BlockchainStateLevelDBRepository(db);
 
-    lastBlockHeight = 1;
+    lastBlockHeight = Long.fromInt(42);
     lastBlockAppHash = Buffer.from('something');
 
     blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
@@ -39,7 +40,7 @@ describe('BlockchainStateLevelDBRepository', () => {
 
       const storedState = cbor.decode(storedStateBuffer);
 
-      expect(storedState).to.have.property('lastBlockHeight', lastBlockHeight);
+      expect(storedState).to.have.property('lastBlockHeight', lastBlockHeight.toString());
 
       expect(storedState).to.have.property('lastBlockAppHash');
       expect(storedState.lastBlockAppHash).to.deep.equal(lastBlockAppHash);
@@ -51,7 +52,8 @@ describe('BlockchainStateLevelDBRepository', () => {
       const storedState = await repository.fetch();
 
       expect(storedState).to.be.instanceOf(BlockchainState);
-      expect(storedState.getLastBlockHeight()).to.equal(0);
+      expect(storedState.getLastBlockHeight()).to.be.instanceOf(Long);
+      expect(storedState.getLastBlockHeight().toInt()).to.equal(0);
       expect(storedState.getLastBlockAppHash()).to.deep.equal(Buffer.alloc(0));
     });
 
@@ -63,7 +65,8 @@ describe('BlockchainStateLevelDBRepository', () => {
       const storedState = await repository.fetch();
 
       expect(storedState).to.be.instanceOf(BlockchainState);
-      expect(storedState.getLastBlockHeight()).to.equal(lastBlockHeight);
+      expect(storedState.getLastBlockHeight()).to.be.instanceOf(Long);
+      expect(storedState.getLastBlockHeight()).to.deep.equal(lastBlockHeight);
       expect(storedState.getLastBlockAppHash()).to.deep.equal(lastBlockAppHash);
     });
   });
