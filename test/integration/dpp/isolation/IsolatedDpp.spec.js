@@ -9,6 +9,9 @@ const getIdentityCreateSTFixture = require(
   '@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture',
 );
 
+const IdentityPublicKey = require('@dashevo/dpp/lib/identity/IdentityPublicKey');
+const { PrivateKey } = require('@dashevo/dashcore-lib');
+
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 const InvalidDataContractError = require('@dashevo/dpp/lib/dataContract/errors/InvalidDataContractError');
 const InvalidDocumentError = require('@dashevo/dpp/lib/document/errors/InvalidDocumentError');
@@ -74,7 +77,17 @@ describe('IsolatedDpp', function main() {
     [document] = getDocumentsFixture();
     document.contractId = dataContract.getId();
     identity = getIdentityFixture();
+
     stateTransition = getIdentityCreateSTFixture();
+
+    const privateKey = new PrivateKey();
+    stateTransition.publicKeys = [new IdentityPublicKey({
+      id: 1,
+      type: IdentityPublicKey.TYPES.ECDSA_SECP256K1,
+      data: privateKey.toPublicKey().toBuffer().toString('base64'),
+      isEnabled: true,
+    })];
+    stateTransition.sign(stateTransition.getPublicKeys()[0], privateKey);
 
     dataProviderMock = createDataProviderMock(this.sinon);
     dataProviderMock.fetchDataContract.returns(dataContract);
@@ -100,6 +113,7 @@ describe('IsolatedDpp', function main() {
     describe('#createFromSerialized', () => {
       it('should pass through validation result', async () => {
         delete dataContract.ownerId;
+
         try {
           await isolatedDpp.dataContract.createFromSerialized(
             dataContract.serialize(),
@@ -221,7 +235,8 @@ describe('IsolatedDpp', function main() {
         const result = await isolatedDpp.stateTransition.createFromSerialized(
           stateTransition.serialize(),
         );
-        expect(result.toJSON()).to.deep.equal(dataContract.toJSON());
+
+        expect(result.toJSON()).to.deep.equal(stateTransition.toJSON());
       });
     });
 
@@ -231,7 +246,7 @@ describe('IsolatedDpp', function main() {
           stateTransition.toJSON(),
         );
 
-        expect(result).to.be.deep.equal(stateTransition.toJSON());
+        expect(result.toJSON()).to.be.deep.equal(stateTransition.toJSON());
       });
     });
 
