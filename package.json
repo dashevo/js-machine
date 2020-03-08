@@ -1,6 +1,6 @@
 {
   "name": "@dashevo/machine-abci",
-  "version": "0.4.0-dev.2",
+  "version": "0.4.0-dev.3",
   "description": "Dash Platform State Machine",
   "engines": {
     "node": ">=8"
@@ -8,7 +8,7 @@
   "scripts": {
     "abci": "node scripts/abci.js",
     "test": "npm run test:coverage",
-    "test:coverage": "nyc --check-coverage --stmts=95 --branch=86 --funcs=93 --lines=95 mocha './test/unit/**/*.spec.js' './test/integration/**/*.spec.js'",
+    "test:coverage": "nyc --check-coverage --stmts=95 --branch=86 --funcs=93 --lines=94 mocha './test/unit/**/*.spec.js' './test/integration/**/*.spec.js'",
     "test:unit": "mocha './test/unit/**/*.spec.js'",
     "test:integration": "mocha './test/integration/**/*.spec.js'",
     "lint": "eslint .",
@@ -33,7 +33,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "dirty-chai": "^2.0.1",
-    "eslint": "^5.16.0",
+    "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.2",
     "levelup": "^4.3.2",
@@ -45,18 +45,22 @@
     "sinon-chai": "^3.3.0"
   },
   "dependencies": {
-    "@dashevo/dpp": "~0.11.0-dev.4",
+    "@dashevo/dashcore-lib": "~0.18.0",
+    "@dashevo/dpp": "~0.11.0-dev.5",
     "@dashevo/drive-grpc": "~0.3.0",
     "@dashevo/grpc-common": "~0.2.0",
     "abci": "^5.0.1",
     "awilix": "^4.2.2",
+    "browserify": "^16.5.0",
     "cbor": "^5.0.1",
     "dotenv-expand": "^5.1.0",
     "dotenv-safe": "^8.1.0",
+    "isolated-vm": "^3.1.2",
     "jayson": "^3.1.1",
     "level-rocksdb": "^4.0.0",
     "level-transactions": "^2.1.4",
-    "long": "^4.0.0",
-    "lru-cache": "^5.1.1"
+    "lru-cache": "^5.1.1",
+    "setimmediate": "^1.0.5",
+    "long": "^4.0.0"
   }
 }
