@@ -127,7 +127,7 @@ describe('IsolatedDpp', function main() {
         }
       });
 
-      it('should create data contract from serialized data', async () => {
+      it.skip('should create data contract from serialized data', async () => {
         const result = await isolatedDpp.dataContract.createFromSerialized(
           dataContract.serialize(),
         );

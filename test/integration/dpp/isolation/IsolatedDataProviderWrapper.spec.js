@@ -8,13 +8,14 @@ const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFi
 const createDataProviderMock = require('@dashevo/dpp/lib/test/mocks/createDataProviderMock');
 const IsolatedDataProviderWrapper = require('../../../../lib/dpp/isolation/IsolatedDataProviderWrapper');
 
-describe('IsolatedDataProviderWrapper', function () {
+describe('IsolatedDataProviderWrapper', function describeIsolatedDataProviderWrapper() {
   let dataProviderMock;
   let dataProviderMockReference;
   let dataProviderWrapper;
   let dataContractFixture;
   let identityFixture;
   let transactionFixture;
+
   this.timeout(100000);
 
   beforeEach(() => {

@@ -1,7 +1,7 @@
 const createDIContainer = require('../../lib/createDIContainer');
 
 describe('createDIContainer', function describeContainer() {
-  this.timeout(10000);
+  this.timeout(15000);
 
   it('should create DI container', async () => {
     const container = await createDIContainer(process.env);
