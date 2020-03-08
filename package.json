@@ -60,6 +60,7 @@
     "level-rocksdb": "^4.0.0",
     "level-transactions": "^2.1.4",
     "lru-cache": "^5.1.1",
-    "setimmediate": "^1.0.5"
+    "setimmediate": "^1.0.5",
+    "long": "^4.0.0"
   }
 }
