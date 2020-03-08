@@ -8,7 +8,7 @@
   "scripts": {
     "abci": "node scripts/abci.js",
     "test": "npm run test:coverage",
-    "test:coverage": "nyc --check-coverage --stmts=95 --branch=86 --funcs=93 --lines=95 mocha './test/unit/**/*.spec.js' './test/integration/**/*.spec.js'",
+    "test:coverage": "nyc --check-coverage --stmts=95 --branch=86 --funcs=93 --lines=94 mocha './test/unit/**/*.spec.js' './test/integration/**/*.spec.js'",
     "test:unit": "mocha './test/unit/**/*.spec.js'",
     "test:integration": "mocha './test/integration/**/*.spec.js'",
     "lint": "eslint .",
@@ -33,7 +33,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "dirty-chai": "^2.0.1",
-    "eslint": "^5.16.0",
+    "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.2",
     "levelup": "^4.3.2",
@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@dashevo/dashcore-lib": "~0.18.0",
-    "@dashevo/dpp": "~0.11.0-dev.4",
+    "@dashevo/dpp": "~0.11.0-dev.5",
     "@dashevo/drive-grpc": "~0.3.0",
     "@dashevo/grpc-common": "~0.2.0",
     "abci": "^5.0.1",
