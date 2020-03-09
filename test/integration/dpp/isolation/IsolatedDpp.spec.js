@@ -26,7 +26,7 @@ const compileFileWithBrowserify = require(
 );
 
 describe('IsolatedDpp', function main() {
-  this.timeout(10000);
+  this.timeout(100000);
 
   let isolateSnapshot;
   let isolatedDpp;
@@ -99,11 +99,29 @@ describe('IsolatedDpp', function main() {
 
   describe('dataContract', () => {
     describe('#create', () => {
-      it('should act the same way as not isolated dpp does');
+      it('should act the same way as not isolated dpp does', async () => {
+        const contractId = dataContract.getId();
+
+        const result = await dpp.dataContract.create(contractId, dataContract.definitions);
+        const isolatedResult = await isolatedDpp.dataContract.create(
+          contractId, dataContract.definitions,
+        );
+
+        expect(result.toJSON()).to.deep.equal(isolatedResult.toJSON());
+      });
     });
 
     describe('#createFromObject', () => {
-      it('should act the same way as not isolated dpp does');
+      it('should act the same way as not isolated dpp does', async () => {
+        const rawContract = dataContract.toJSON();
+
+        const result = await dpp.dataContract.createFromObject(rawContract);
+        const isolatedResult = await isolatedDpp.dataContract.createFromObject(
+          rawContract,
+        );
+
+        expect(result.toJSON()).to.deep.equal(isolatedResult.toJSON());
+      });
     });
 
     describe('#validate', () => {
@@ -139,11 +157,33 @@ describe('IsolatedDpp', function main() {
 
   describe('document', () => {
     describe('#create', () => {
-      it('should act the same way as not isolated dpp does');
+      it('should act the same way as not isolated dpp does', async () => {
+        const result = await dpp.document.create(
+          dataContract, dataContract.ownerId, 'niceDocument', {
+            name: 'someName',
+          },
+        );
+
+        const isolatedResult = await isolatedDpp.document.create(
+          dataContract, dataContract.ownerId, 'niceDocument', {
+            name: 'someName',
+          },
+        );
+
+        expect(result.toJSON()).to.deep.equal(isolatedResult.toJSON());
+      });
     });
 
     describe('#createFromObject', () => {
-      it('should act the same way as not isolated dpp does');
+      it('should act the same way as not isolated dpp does', async () => {
+        const rawDocument = document.toJSON();
+
+        const result = await dpp.document.createFromObject(rawDocument);
+
+        const isolatedResult = await isolatedDpp.document.createFromObject(rawDocument);
+
+        expect(result.toJSON()).to.deep.equal(isolatedResult.toJSON());
+      });
     });
 
     describe('#validate', () => {
@@ -178,11 +218,27 @@ describe('IsolatedDpp', function main() {
 
   describe('identity', () => {
     describe('#create', () => {
-      it('should act the same way as not isolated dpp does');
+      it('should act the same way as not isolated dpp does', async () => {
+        const { publicKeys } = identityCreateTransition;
+
+        const result = await dpp.identity.create(publicKeys);
+
+        const isolatedResult = await isolatedDpp.identity.create(publicKeys);
+
+        expect(result.toJSON()).to.deep.equal(isolatedResult.toJSON());
+      });
     });
 
     describe('#createFromObject', () => {
-      it('should act the same way as not isolated dpp does');
+      it('should act the same way as not isolated dpp does', async () => {
+        const rawIdentity = identity.toJSON();
+
+        const result = await dpp.identity.createFromObject(rawIdentity);
+
+        const isolatedResult = await isolatedDpp.identity.createFromObject(rawIdentity);
+
+        expect(result.toJSON()).to.deep.equal(isolatedResult.toJSON());
+      });
     });
 
     describe('#validate', () => {
