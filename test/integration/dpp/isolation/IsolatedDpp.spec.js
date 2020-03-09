@@ -36,7 +36,7 @@ describe('IsolatedDpp', function main() {
 
   let dataContract;
   let document;
-  let stateTransition;
+  let identityCreateTransition;
   let identity;
 
   before(async () => {
@@ -78,16 +78,16 @@ describe('IsolatedDpp', function main() {
     document.contractId = dataContract.getId();
     identity = getIdentityFixture();
 
-    stateTransition = getIdentityCreateSTFixture();
+    identityCreateTransition = getIdentityCreateSTFixture();
 
     const privateKey = new PrivateKey();
-    stateTransition.publicKeys = [new IdentityPublicKey({
+    identityCreateTransition.publicKeys = [new IdentityPublicKey({
       id: 1,
       type: IdentityPublicKey.TYPES.ECDSA_SECP256K1,
       data: privateKey.toPublicKey().toBuffer().toString('base64'),
       isEnabled: true,
     })];
-    stateTransition.sign(stateTransition.getPublicKeys()[0], privateKey);
+    identityCreateTransition.sign(identityCreateTransition.getPublicKeys()[0], privateKey);
 
     dataProviderMock = createDataProviderMock(this.sinon);
     dataProviderMock.fetchDataContract.returns(dataContract);
@@ -127,10 +127,11 @@ describe('IsolatedDpp', function main() {
         }
       });
 
-      it.skip('should create data contract from serialized data', async () => {
+      it('should create data contract from serialized data', async () => {
         const result = await isolatedDpp.dataContract.createFromSerialized(
           dataContract.serialize(),
         );
+
         expect(result.toJSON()).to.deep.equal(dataContract.toJSON());
       });
     });
@@ -215,38 +216,64 @@ describe('IsolatedDpp', function main() {
 
   describe('stateTransition', () => {
     describe('#createFromSerialized', () => {
-      it('should pass through validation result', async () => {
-        delete stateTransition.lockedOutPoint;
-
-        try {
-          await isolatedDpp.stateTransition.createFromSerialized(
-            stateTransition.serialize(),
-          );
-          expect.fail('Error was not thrown');
-        } catch (e) {
-          expect(e).to.be.an.instanceOf(InvalidStateTransitionError);
-
-          const [error] = e.getErrors();
-          expect(error).to.be.an.instanceOf(JsonSchemaError);
-        }
+      describe('DocumentsStateTransition', () => {
+        it('should pass through validation result');
+        it('should create state transition from serialized data');
       });
 
-      it('should create state transition from serialized data', async () => {
-        const result = await isolatedDpp.stateTransition.createFromSerialized(
-          stateTransition.serialize(),
-        );
+      describe('DataContractStateTransition', () => {
+        it('should pass through validation result');
+        it('should create state transition from serialized data');
+      });
 
-        expect(result.toJSON()).to.deep.equal(stateTransition.toJSON());
+      describe('IdentityCreateTransition', () => {
+        it('should pass through validation result', async () => {
+          delete identityCreateTransition.lockedOutPoint;
+
+          try {
+            await isolatedDpp.stateTransition.createFromSerialized(
+              identityCreateTransition.serialize(),
+            );
+            expect.fail('Error was not thrown');
+          } catch (e) {
+            expect(e).to.be.an.instanceOf(InvalidStateTransitionError);
+
+            const [error] = e.getErrors();
+            expect(error).to.be.an.instanceOf(JsonSchemaError);
+          }
+        });
+
+        it('should create state transition from serialized data', async () => {
+          const result = await isolatedDpp.stateTransition.createFromSerialized(
+            identityCreateTransition.serialize(),
+          );
+
+          expect(result.toJSON()).to.deep.equal(identityCreateTransition.toJSON());
+        });
       });
     });
 
     describe('createFromObject', () => {
-      it('should act the same way as not isolated dpp does', async () => {
-        const result = await isolatedDpp.stateTransition.createFromObject(
-          stateTransition.toJSON(),
-        );
+      describe('DocumentsStateTransition', () => {
+        it('should pass through validation result');
+        it('should create state transition from object');
+      });
 
-        expect(result.toJSON()).to.be.deep.equal(stateTransition.toJSON());
+      describe('DataContractStateTransition', () => {
+        it('should pass through validation result');
+        it('should create state transition from object');
+      });
+
+      describe('IdentityCreateTransition', () => {
+        it('should pass through validation result');
+
+        it('should create state transition from object', async () => {
+          const result = await isolatedDpp.stateTransition.createFromObject(
+            identityCreateTransition.toJSON(),
+          );
+
+          expect(result.toJSON()).to.be.deep.equal(identityCreateTransition.toJSON());
+        });
       });
     });
 
