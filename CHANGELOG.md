@@ -9,7 +9,7 @@
 ### Features
 
 * isolate ST parsing and validation ([80a6011](https://github.com/dashevo/js-machine/commit/80a601104a3d6cb08126dd810f9995bfc3286acd))
-* upgrade DPP to 0.11-dev ([60d67d7](https://github.com/dashevo/js-machine/commit/60d67d7bf113c2d0305a12b6f86fec3f695e8834))
+* upgrade DPP to v0.11 ([60d67d7](https://github.com/dashevo/js-machine/commit/60d67d7bf113c2d0305a12b6f86fec3f695e8834))
 
 ### BREAKING CHANGES
 
