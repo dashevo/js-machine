@@ -292,12 +292,26 @@ describe('IsolatedDpp', function main() {
     describe('#createFromSerialized', () => {
       describe('DocumentsStateTransition', () => {
         it('should pass through validation result');
-        it('should create state transition from serialized data');
+        it('should create state transition from serialized data', async () => {
+          const result = await isolatedDpp.stateTransition.createFromSerialized(
+            documentsStateTransition.serialize(),
+            { skipValidation: true },
+          );
+
+          expect(result.toJSON()).to.deep.equal(documentsStateTransition.toJSON());
+        });
       });
 
       describe('DataContractStateTransition', () => {
         it('should pass through validation result');
-        it('should create state transition from serialized data');
+        it('should create state transition from serialized data', async () => {
+          const result = await isolatedDpp.stateTransition.createFromSerialized(
+            dataContractStateTransition.serialize(),
+            { skipValidation: true },
+          );
+
+          expect(result.toJSON()).to.deep.equal(dataContractStateTransition.toJSON());
+        });
       });
 
       describe('IdentityCreateTransition', () => {
