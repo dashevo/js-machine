@@ -15,4 +15,4 @@
 
 * NodeJS < 12 is not supported anymore
 * blockchain state created by previous version of Machine is not supported (cause error on start)
-* see [DPP breaking changes](https://github.com/dashevo/js-dpp/blob/v0.11-dev/CHANGELOG.md#0110-2020-03-09)
+* see [DPP breaking changes](https://github.com/dashevo/js-dpp/blob/v0.11.0/CHANGELOG.md#0110-2020-03-09)
