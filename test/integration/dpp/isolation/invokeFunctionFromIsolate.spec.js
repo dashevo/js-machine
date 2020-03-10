@@ -21,7 +21,6 @@ describe('invokeFunctionFromIsolate', function describe() {
       global.log = function(...args) {
         $0.applyIgnored(undefined, args, { arguments: { copy: true } });
       }`,
-    // eslint-disable-next-line no-console
     [console.log], { arguments: { reference: true } });
     await context.eval(`
       global.infiniteLoop = function infiniteLoop() {
