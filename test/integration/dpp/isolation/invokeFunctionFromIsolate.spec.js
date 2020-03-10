@@ -41,9 +41,13 @@ describe('invokeFunctionFromIsolate', function describe() {
     `);
   });
 
-  it('should call a given function from isolate with given arguments and return a result');
+  afterEach(() => {
+    if (!isolate.isDisposed) {
+      isolate.dispose();
+    }
+  });
 
-  it.skip('should stop execution after a timeout for an async function', async () => {
+  it('should stop execution after a timeout for an async function', async () => {
     // Doesn't work with coverage
 
     const timeout = 2000;
@@ -52,7 +56,7 @@ describe('invokeFunctionFromIsolate', function describe() {
     const timeStart = Date.now();
     try {
       await invokeFunctionFromIsolate(
-        jail,
+        context,
         '',
         'wait',
         [5000],
@@ -69,17 +73,17 @@ describe('invokeFunctionFromIsolate', function describe() {
     expect(timeSpent).to.be.lessThan(timeout + 1000);
   });
 
-  it.skip('should stop execution after a timeout for an async function that makes call to an external reference', async () => {
+  it('should stop execution after a timeout for an async function that makes call to an external reference', async () => {
     const timeout = 2000;
     let error;
 
     const timeStart = Date.now();
     try {
       await invokeFunctionFromIsolate(
-        jail,
+        context,
         '',
         'setTimeout',
-        [5000],
+        [100000],
         { timeout, arguments: { copy: true }, result: { promise: true, copy: true } },
       );
     } catch (e) {
@@ -87,10 +91,11 @@ describe('invokeFunctionFromIsolate', function describe() {
     }
     const timeSpent = Date.now() - timeStart;
 
-    expect(timeSpent).to.be.greaterThan(timeout);
-    expect(timeSpent).to.be.lessThan(timeout + 1000);
     expect(error).to.be.instanceOf(Error);
     expect(error.message).to.be.equal('Script execution timed out.');
+
+    expect(timeSpent).to.be.greaterThan(timeout);
+    expect(timeSpent).to.be.lessThan(timeout + 1000);
   });
 
   it('should stop execution after a timeout for a sync function running inside the isolate', async () => {
@@ -100,7 +105,7 @@ describe('invokeFunctionFromIsolate', function describe() {
 
     try {
       await invokeFunctionFromIsolate(
-        jail,
+        context,
         '',
         'infiniteLoop',
         [],
@@ -117,7 +122,7 @@ describe('invokeFunctionFromIsolate', function describe() {
     expect(timeSpent).to.be.lessThan(timeout + 1000);
   });
 
-  it.skip('should stop execution if memory is exceeded', async () => {
+  it('should stop execution if memory is exceeded', async () => {
     // Doesn't work with coverage
 
     // 180 mb, while our limit is 128 mb
@@ -126,7 +131,7 @@ describe('invokeFunctionFromIsolate', function describe() {
 
     // This invokation should be fine
     await invokeFunctionFromIsolate(
-      jail,
+      context,
       '',
       'allocateRandomMemory',
       // 100 mb should be fine, as the limit set in beforeEach hook is 128
@@ -137,7 +142,7 @@ describe('invokeFunctionFromIsolate', function describe() {
     // This one should crash
     try {
       await invokeFunctionFromIsolate(
-        jail,
+        context,
         '',
         'allocateRandomMemory',
         [memoryToAllocate],
@@ -155,6 +160,6 @@ describe('invokeFunctionFromIsolate', function describe() {
     await jail.set('global', jail.derefInto());
     await context.eval('global.myFunction = function myFunction(){ return true; }');
 
-    await invokeFunctionFromIsolate(jail, '', 'myFunction', []);
+    await invokeFunctionFromIsolate(context, '', 'myFunction', []);
   });
 });
