@@ -13,7 +13,7 @@ describe('invokeFunctionFromIsolate', function describe() {
   this.timeout(100000);
 
   beforeEach(async () => {
-    isolate = new Isolate({ memoryLimit: 128 });
+    isolate = new Isolate({ memoryLimit: 50 });
 
     context = await isolate.createContext();
 
@@ -65,6 +65,7 @@ describe('invokeFunctionFromIsolate', function describe() {
     } catch (e) {
       error = e;
     }
+
     const timeSpent = Date.now() - timeStart;
 
     expect(error).to.be.instanceOf(Error);
@@ -78,6 +79,7 @@ describe('invokeFunctionFromIsolate', function describe() {
     let error;
 
     const timeStart = Date.now();
+
     try {
       await invokeFunctionFromIsolate(
         context,
@@ -127,22 +129,24 @@ describe('invokeFunctionFromIsolate', function describe() {
   });
 
   it('should stop execution if memory is exceeded', async () => {
-    // 180 mb, while our limit is 128 mb
-    const memoryToAllocate = 180 * 1000 * 1000;
-    let error;
-
     // This invokation should be fine
     await invokeFunctionFromIsolate(
       context,
       '',
       'allocateRandomMemory',
-      // 100 mb should be fine, as the limit set in beforeEach hook is 128
-      [100 * 1000 * 1000],
+      // 45 mb should be fine, as the limit set in beforeEach hook is 50
+      [45 * 1000 * 1000],
       { arguments: { copy: true }, result: { promise: true, copy: true } },
     );
 
     // This one should crash
+
+    let error;
+
     try {
+      // 180 mb, while our limit is 50 mb
+      const memoryToAllocate = 180 * 1000 * 1000;
+
       await invokeFunctionFromIsolate(
         context,
         '',
