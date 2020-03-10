@@ -1,5 +1,3 @@
-const { Isolate } = require('isolated-vm');
-
 const DashPlatformProtocol = require('@dashevo/dpp');
 const createDataProviderMock = require('@dashevo/dpp/lib/test/mocks/createDataProviderMock');
 const getDocumentsFixture = require('@dashevo/dpp/lib/test/fixtures/getDocumentsFixture');
@@ -8,6 +6,7 @@ const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFi
 const getIdentityCreateSTFixture = require(
   '@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture',
 );
+const generateRandomId = require('@dashevo/dpp/lib/test/utils/generateRandomId');
 const DocumentsStateTransition = require('@dashevo/dpp/lib/document/stateTransition/DocumentsStateTransition');
 const DataContractStateTransition = require('@dashevo/dpp/lib/dataContract/stateTransition/DataContractStateTransition');
 
@@ -17,14 +16,29 @@ const IdentityPublicKey = require('@dashevo/dpp/lib/identity/IdentityPublicKey')
 const { PrivateKey } = require('@dashevo/dashcore-lib');
 
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
+const InvalidDataContractError = require('@dashevo/dpp/lib/dataContract/errors/InvalidDataContractError');
+const InvalidDocumentError = require('@dashevo/dpp/lib/document/errors/InvalidDocumentError');
+const InvalidIdentityError = require('@dashevo/dpp/lib/identity/errors/InvalidIdentityError');
+
+const JsonSchemaError = require('@dashevo/dpp/lib/errors/JsonSchemaError');
+const InvalidDocumentTypeError = require('@dashevo/dpp/lib/errors/InvalidDocumentTypeError');
+const { Isolate } = require('isolated-vm');
 
 const IsolatedDpp = require('../../../../lib/dpp/isolation/IsolatedDpp');
 const compileFileWithBrowserify = require(
   '../../../../lib/dpp/isolation/compileFileWithBrowserify',
 );
 
+// The regexp below explodes exponentially.
+// On a string that contains 'x' with length above 30
+// it will take at least several seconds on a modern hardware.
+// It takes about 3 seconds with 29 symbols on 2019 16" MacBook Pro,
+// And with 30 symbols it's already ~6 seconds, and with 31 symbols it's 12 sec
+const exponentialPattern = '(x+x+)+y';
+const stringThatExponentialyBlowsRegexp = 'x'.repeat(35);
+
 describe('IsolatedDpp', function main() {
-  this.timeout(100000);
+  this.timeout(20000);
 
   let isolateSnapshot;
   let isolatedDpp;
@@ -249,7 +263,60 @@ describe('IsolatedDpp', function main() {
     });
   });
 
-  it('should stop execution if dpp validation takes too much memory');
+  it('should stop execution if dpp validation takes too much time', async () => {
+    const idenitity = getIdentityFixture();
+    const privateKey = new PrivateKey();
+    const identityPublicKey = new IdentityPublicKey({
+      id: 101,
+      type: IdentityPublicKey.TYPES.ECDSA_SECP256K1,
+      data: privateKey.toPublicKey().toBuffer().toString('base64'),
+      isEnabled: true,
+    });
+    idenitity.publicKeys.push(identityPublicKey);
+    // Identity init
 
-  it('should stop execution if dpp validation takes too much time');
+    // Creating dangerous contract fixture
+    const contractId = generateRandomId();
+    const dangerousDocSchema = {
+      doc: {
+        properties: {
+          str: {
+            type: 'string',
+            pattern: exponentialPattern,
+          },
+        },
+        additionalProperties: false,
+      },
+    };
+    const contract = await dpp.dataContract.create(contractId, dangerousDocSchema);
+    dataProviderMock.fetchDataContract.resolves(contract);
+    const exponentialDoc = await dpp.document.create(
+      contract,
+      idenitity.getId(),
+      'doc',
+      { str: stringThatExponentialyBlowsRegexp },
+    );
+
+    // Creating document that exploits dangerous contract
+    const documentSt = await dpp.document.createStateTransition([exponentialDoc]);
+    documentSt.sign(identityPublicKey, privateKey);
+
+    const st = documentSt.serialize().toString('hex');
+
+    const start = Date.now();
+    let error;
+    try {
+      await isolatedDpp.stateTransition.createFromSerialized(st);
+    } catch (e) {
+      error = e;
+    }
+    const end = Date.now();
+
+    expect(error).to.be.instanceOf(Error);
+    expect(error.message).to.be.equal('Script execution timed out.');
+
+    expect(isolateOptions.executionOptions.timeout).to.be.equal(5000);
+    expect(end - start).to.be.greaterThan(isolateOptions.executionOptions.timeout);
+    expect(end - start).to.be.lessThan(isolateOptions.executionOptions.timeout + 1000);
+  });
 });
