@@ -134,8 +134,8 @@ describe('invokeFunctionFromIsolate', function describe() {
       context,
       '',
       'allocateRandomMemory',
-      // 30 mb should be fine, as the limit set in beforeEach hook is 128
-      [30 * 1000 * 1000],
+      // 45 mb should be fine, as the limit set in beforeEach hook is 50
+      [45 * 1000 * 1000],
       { arguments: { copy: true }, result: { promise: true, copy: true } },
     );
 
@@ -144,8 +144,8 @@ describe('invokeFunctionFromIsolate', function describe() {
     let error;
 
     try {
-      // 80 mb, while our limit is 50 mb
-      const memoryToAllocate = 80 * 1000 * 1000;
+      // 180 mb, while our limit is 50 mb
+      const memoryToAllocate = 180 * 1000 * 1000;
 
       await invokeFunctionFromIsolate(
         context,
