@@ -14,21 +14,22 @@ describe('invokeFunctionFromIsolate', function describe() {
 
   beforeEach(async () => {
     isolate = new Isolate({ memoryLimit: 128 });
+
     context = await isolate.createContext();
+
     ({ global: jail } = context);
+
     await jail.set('global', jail.derefInto());
+
     await context.eval(`global.wait = ${waitShim}`);
-    await context.evalClosure(`
-      global.log = function(...args) {
-        $0.applyIgnored(undefined, args, { arguments: { copy: true } });
-      }`,
-    [console.log], { arguments: { reference: true } });
+
     await context.eval(`
       global.infiniteLoop = function infiniteLoop() {
         while(true) {}
         return;
       };
     `);
+
     await context.evalClosure(`
       global.setTimeout = function(timeout) {
         return $0.apply(undefined, [timeout], { result: { promise: true } });
@@ -126,8 +127,6 @@ describe('invokeFunctionFromIsolate', function describe() {
   });
 
   it('should stop execution if memory is exceeded', async () => {
-    // Doesn't work with coverage
-
     // 180 mb, while our limit is 128 mb
     const memoryToAllocate = 180 * 1000 * 1000;
     let error;
