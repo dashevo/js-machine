@@ -1,3 +1,4 @@
+const Long = require('long');
 const {
   abci: {
     ResponseDeliverTx,
@@ -107,7 +108,7 @@ describe('deliverTxHandlerFactory', () => {
 
     dppMock.identity.applyStateTransition = this.sinon.stub().returns(identityFixture);
 
-    blockHeight = 1;
+    blockHeight = Long.fromInt(1);
     blockHash = Buffer.alloc(0);
 
     blockchainStateMock = {
@@ -145,7 +146,7 @@ describe('deliverTxHandlerFactory', () => {
 
     const applyStateTransitionRequest = new ApplyStateTransitionRequest();
 
-    applyStateTransitionRequest.setBlockHeight(blockHeight);
+    applyStateTransitionRequest.setBlockHeight(blockHeight.toInt());
     applyStateTransitionRequest.setBlockHash(blockHash);
 
     applyStateTransitionRequest.setStateTransition(
@@ -181,7 +182,7 @@ describe('deliverTxHandlerFactory', () => {
 
     const applyStateTransitionRequest = new ApplyStateTransitionRequest();
 
-    applyStateTransitionRequest.setBlockHeight(blockHeight);
+    applyStateTransitionRequest.setBlockHeight(blockHeight.toInt());
     applyStateTransitionRequest.setBlockHash(blockHash);
 
     applyStateTransitionRequest.setStateTransition(
@@ -208,7 +209,7 @@ describe('deliverTxHandlerFactory', () => {
 
     const applyStateTransitionRequest = new ApplyStateTransitionRequest();
 
-    applyStateTransitionRequest.setBlockHeight(blockHeight);
+    applyStateTransitionRequest.setBlockHeight(blockHeight.toInt());
     applyStateTransitionRequest.setBlockHash(blockHash);
 
     applyStateTransitionRequest.setStateTransition(
