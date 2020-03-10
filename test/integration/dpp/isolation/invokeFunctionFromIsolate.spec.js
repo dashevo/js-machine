@@ -8,6 +8,7 @@ describe('invokeFunctionFromIsolate', function describe() {
   let isolate;
   let context;
   let jail;
+  let timeoutFromIsolate;
 
   this.timeout(100000);
 
@@ -33,7 +34,7 @@ describe('invokeFunctionFromIsolate', function describe() {
         return $0.apply(undefined, [timeout], { result: { promise: true } });
       }`,
     [timeout => new Promise((resolve) => {
-      setTimeout(resolve, timeout);
+      timeoutFromIsolate = setTimeout(resolve, timeout);
     })], { arguments: { reference: true } });
 
     await context.eval(`
@@ -48,8 +49,6 @@ describe('invokeFunctionFromIsolate', function describe() {
   });
 
   it('should stop execution after a timeout for an async function', async () => {
-    // Doesn't work with coverage
-
     const timeout = 2000;
     let error;
 
@@ -89,6 +88,9 @@ describe('invokeFunctionFromIsolate', function describe() {
     } catch (e) {
       error = e;
     }
+
+    clearTimeout(timeoutFromIsolate);
+
     const timeSpent = Date.now() - timeStart;
 
     expect(error).to.be.instanceOf(Error);
