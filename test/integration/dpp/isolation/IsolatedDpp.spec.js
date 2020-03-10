@@ -11,6 +11,8 @@ const getIdentityCreateSTFixture = require(
 const DocumentsStateTransition = require('@dashevo/dpp/lib/document/stateTransition/DocumentsStateTransition');
 const DataContractStateTransition = require('@dashevo/dpp/lib/dataContract/stateTransition/DataContractStateTransition');
 
+const IdentityAlreadyExistsError = require('@dashevo/dpp/lib/errors/IdentityAlreadyExistsError');
+
 const IdentityPublicKey = require('@dashevo/dpp/lib/identity/IdentityPublicKey');
 const { PrivateKey } = require('@dashevo/dashcore-lib');
 
@@ -230,22 +232,18 @@ describe('IsolatedDpp', function main() {
           .withArgs(identityCreateTransition.getIdentityId())
           .resolves(identity);
 
-        const rawStateTransition = identityCreateTransition.toJSON();
+        {
+          const result = await dpp.stateTransition.validateData(identityCreateTransition);
 
-        try {
-          await dpp.stateTransition.validateData(rawStateTransition);
-          expect.fail('Error was not thrown');
-        } catch (e) {
-          expect(e).to.be.an.instanceOf(InvalidStateTransitionError);
+          const [e] = result.getErrors();
+          expect(e).to.be.an.instanceOf(IdentityAlreadyExistsError);
         }
 
-        try {
-          await isolatedDpp.stateTransition.validateData(
-            rawStateTransition,
-          );
-          expect.fail('Error was not thrown');
-        } catch (e) {
-          expect(e).to.be.an.instanceOf(InvalidStateTransitionError);
+        {
+          const result = await isolatedDpp.stateTransition.validateData(identityCreateTransition);
+
+          const [e] = result.getErrors();
+          expect(e).to.be.an.instanceOf(IdentityAlreadyExistsError);
         }
       });
     });
