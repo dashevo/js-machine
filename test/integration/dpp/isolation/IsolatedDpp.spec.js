@@ -130,7 +130,7 @@ describe('IsolatedDpp', function main() {
 
     describe('#createFromSerialized', () => {
       it('should pass through validation result', async () => {
-        delete dataContract.ownerId;
+        delete dataContract.contractId;
 
         try {
           await isolatedDpp.dataContract.createFromSerialized(
