@@ -16,12 +16,6 @@ const IdentityPublicKey = require('@dashevo/dpp/lib/identity/IdentityPublicKey')
 const { PrivateKey } = require('@dashevo/dashcore-lib');
 
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
-const InvalidDataContractError = require('@dashevo/dpp/lib/dataContract/errors/InvalidDataContractError');
-const InvalidDocumentError = require('@dashevo/dpp/lib/document/errors/InvalidDocumentError');
-const InvalidIdentityError = require('@dashevo/dpp/lib/identity/errors/InvalidIdentityError');
-
-const JsonSchemaError = require('@dashevo/dpp/lib/errors/JsonSchemaError');
-const InvalidDocumentTypeError = require('@dashevo/dpp/lib/errors/InvalidDocumentTypeError');
 const { Isolate } = require('isolated-vm');
 
 const IsolatedDpp = require('../../../../lib/dpp/isolation/IsolatedDpp');
