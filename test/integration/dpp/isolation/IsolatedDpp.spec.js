@@ -8,6 +8,8 @@ const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFi
 const getIdentityCreateSTFixture = require(
   '@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture',
 );
+const DocumentsStateTransition = require('@dashevo/dpp/lib/document/stateTransition/DocumentsStateTransition');
+const DataContractStateTransition = require('@dashevo/dpp/lib/dataContract/stateTransition/DataContractStateTransition');
 
 const IdentityPublicKey = require('@dashevo/dpp/lib/identity/IdentityPublicKey');
 const { PrivateKey } = require('@dashevo/dashcore-lib');
@@ -38,6 +40,8 @@ describe('IsolatedDpp', function main() {
   let document;
   let identityCreateTransition;
   let identity;
+  let documentsStateTransition;
+  let dataContractStateTransition;
 
   before(async () => {
     const isolateDataProviderCode = await compileFileWithBrowserify(
@@ -73,14 +77,28 @@ describe('IsolatedDpp', function main() {
       },
     };
 
+    const privateKey = new PrivateKey();
+    const publicKey = privateKey.toPublicKey().toBuffer().toString('base64');
+    const publicKeyId = 1;
+
+    const identityPublicKey = new IdentityPublicKey()
+      .setId(publicKeyId)
+      .setType(IdentityPublicKey.TYPES.ECDSA_SECP256K1)
+      .setData(publicKey);
+
     dataContract = getDataContractFixture();
-    [document] = getDocumentsFixture();
+    const documents = getDocumentsFixture();
+    [document] = documents;
     document.contractId = dataContract.getId();
     identity = getIdentityFixture();
 
     identityCreateTransition = getIdentityCreateSTFixture();
+    documentsStateTransition = new DocumentsStateTransition(documents);
+    documentsStateTransition.sign(identityPublicKey, privateKey.toBuffer());
 
-    const privateKey = new PrivateKey();
+    dataContractStateTransition = new DataContractStateTransition(dataContract);
+    dataContractStateTransition.sign(identityPublicKey, privateKey);
+
     identityCreateTransition.publicKeys = [new IdentityPublicKey({
       id: 1,
       type: IdentityPublicKey.TYPES.ECDSA_SECP256K1,
@@ -312,12 +330,27 @@ describe('IsolatedDpp', function main() {
     describe('createFromObject', () => {
       describe('DocumentsStateTransition', () => {
         it('should pass through validation result');
-        it('should create state transition from object');
+
+        it('should create state transition from object', async () => {
+          const result = await isolatedDpp.stateTransition.createFromObject(
+            documentsStateTransition.toJSON(),
+            { skipValidation: true },
+          );
+
+          expect(result.toJSON()).to.be.deep.equal(documentsStateTransition.toJSON());
+        });
       });
 
       describe('DataContractStateTransition', () => {
         it('should pass through validation result');
-        it('should create state transition from object');
+        it('should create state transition from object', async () => {
+          const result = await isolatedDpp.stateTransition.createFromObject(
+            dataContractStateTransition.toJSON(),
+            { skipValidation: true },
+          );
+
+          expect(result.toJSON()).to.be.deep.equal(dataContractStateTransition.toJSON());
+        });
       });
 
       describe('IdentityCreateTransition', () => {
@@ -334,8 +367,30 @@ describe('IsolatedDpp', function main() {
     });
 
     describe('#validate', () => {
-      it('should act the same way as not isolated dpp does when it is valid');
-      it('should act the same way as not isolated dpp does when it is not valid');
+      it('should act the same way as not isolated dpp does when it is valid', async () => {
+        const rawStateTransition = identityCreateTransition.toJSON();
+
+        const result = await dpp.stateTransition.validate(rawStateTransition);
+        const isolatedResult = await isolatedDpp.stateTransition.validate(
+          rawStateTransition,
+        );
+
+        expect(result.isValid()).to.be.true();
+        expect(result).to.deep.equal(isolatedResult);
+      });
+
+      it('should act the same way as not isolated dpp does when it is not valid', async () => {
+        const rawStateTransition = identityCreateTransition.toJSON();
+        delete rawStateTransition.protocolVersion;
+
+        const result = await dpp.stateTransition.validate(rawStateTransition);
+        const isolatedResult = await isolatedDpp.stateTransition.validate(
+          rawStateTransition,
+        );
+
+        expect(result.isValid()).to.be.false();
+        expect(result).to.deep.equal(isolatedResult);
+      });
     });
   });
 
