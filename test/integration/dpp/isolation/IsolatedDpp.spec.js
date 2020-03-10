@@ -226,7 +226,7 @@ describe('IsolatedDpp', function main() {
         expect(result).to.deep.equal(isolatedResult);
       });
 
-      it('should act the same way as not isolated dpp does when it is not valid', async () => {
+      it.skip('should act the same way as not isolated dpp does when it is not valid', async () => {
         dataProviderMock
           .fetchIdentity
           .withArgs(identityCreateTransition.getIdentityId())
