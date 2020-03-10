@@ -68,7 +68,7 @@ describe('invokeFunctionFromIsolate', function describe() {
 
     expect(error).to.be.instanceOf(Error);
     expect(error.message).to.be.equal('Script execution timed out.');
-    expect(timeSpent).to.be.greaterThan(timeout);
+    expect(timeSpent >= timeout).to.be.true();
     expect(timeSpent).to.be.lessThan(timeout + 1000);
   });
 
@@ -96,7 +96,7 @@ describe('invokeFunctionFromIsolate', function describe() {
     expect(error).to.be.instanceOf(Error);
     expect(error.message).to.be.equal('Script execution timed out.');
 
-    expect(timeSpent).to.be.greaterThan(timeout);
+    expect(timeSpent >= timeout).to.be.true();
     expect(timeSpent).to.be.lessThan(timeout + 1000);
   });
 
@@ -120,7 +120,8 @@ describe('invokeFunctionFromIsolate', function describe() {
 
     expect(error).to.be.instanceOf(Error);
     expect(error.message).to.be.equal('Script execution timed out.');
-    expect(timeSpent).to.be.greaterThan(timeout);
+
+    expect(timeSpent >= timeout).to.be.true();
     expect(timeSpent).to.be.lessThan(timeout + 1000);
   });
 
