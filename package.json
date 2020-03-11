@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@dashevo/dashcore-lib": "~0.18.0",
-    "@dashevo/dpp": "~0.11.0-dev.5",
+    "@dashevo/dpp": "github:dashevo/js-dpp#validator-option",
     "@dashevo/drive-grpc": "~0.3.0",
     "@dashevo/grpc-common": "~0.2.0",
     "abci": "^5.0.1",
