@@ -1,6 +1,6 @@
 {
   "name": "@dashevo/machine-abci",
-  "version": "0.4.0-dev.6",
+  "version": "0.4.0-dev.7",
   "description": "Dash Platform State Machine",
   "engines": {
     "node": ">=8"
@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@dashevo/dashcore-lib": "~0.18.0",
-    "@dashevo/dpp": "github:dashevo/js-dpp#validator-option",
+    "@dashevo/dpp": "~0.11.0-dev.6",
     "@dashevo/drive-grpc": "~0.3.0",
     "@dashevo/grpc-common": "~0.2.0",
     "abci": "^5.0.1",
