@@ -6,7 +6,7 @@ const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataCo
 const getIdentityFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityFixture');
 
 const createDataProviderMock = require('@dashevo/dpp/lib/test/mocks/createDataProviderMock');
-const IsolatedDataProviderWrapper = require('../../../../lib/dpp/isolation/IsolatedDataProviderWrapper');
+const IsolatedDataProviderWrapper = require('../../../../../lib/dpp/isolation/dpp/internal/ExternalDataProvider');
 
 describe('IsolatedDataProviderWrapper', function describeIsolatedDataProviderWrapper() {
   let dataProviderMock;

@@ -1,7 +1,5 @@
 const getIdentityCreateSTFixture = require('@dashevo/dpp/lib/test/fixtures/getIdentityCreateSTFixture');
 
-const createDPPMock = require('@dashevo/dpp/lib/test/mocks/createDPPMock');
-
 const ConsensusError = require('@dashevo/dpp/lib/errors/ConsensusError');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 
@@ -14,15 +12,23 @@ const MemoryLimitExceededError = require('../../../../../lib/abci/errors/MemoryL
 
 describe('unserializeStateTransitionFactory', () => {
   let unserializeStateTransition;
-  let dppMock;
   let stateTransitionFixture;
+  let isolatedDppMock;
+  let createIsolatedDppMock;
 
   beforeEach(function beforeEach() {
     stateTransitionFixture = getIdentityCreateSTFixture().serialize();
 
-    dppMock = createDPPMock(this.sinon);
+    isolatedDppMock = {
+      dispose: this.sinon.stub(),
+      stateTransition: {
+        createFromSerialized: this.sinon.stub(),
+      },
+    };
 
-    unserializeStateTransition = unserializeStateTransitionFactory(dppMock);
+    createIsolatedDppMock = this.sinon.stub().resolves(isolatedDppMock);
+
+    unserializeStateTransition = unserializeStateTransitionFactory(createIsolatedDppMock);
   });
 
   it('should throw InvalidArgumentAbciError if State Transition is not specified', async () => {
@@ -34,6 +40,9 @@ describe('unserializeStateTransitionFactory', () => {
       expect(e).to.be.instanceOf(InvalidArgumentAbciError);
       expect(e.getMessage()).to.equal('Invalid argument: State Transition is not specified');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
+
+      expect(createIsolatedDppMock).to.not.be.called();
+      expect(isolatedDppMock.dispose).to.not.be.called();
     }
   });
 
@@ -44,7 +53,7 @@ describe('unserializeStateTransitionFactory', () => {
       stateTransitionFixture.toJSON(),
     );
 
-    dppMock.stateTransition.createFromSerialized.throws(error);
+    isolatedDppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
       await unserializeStateTransition(stateTransitionFixture);
@@ -57,12 +66,15 @@ describe('unserializeStateTransitionFactory', () => {
       expect(e.getData()).to.deep.equal({
         errors: [consensusError],
       });
+
+      expect(createIsolatedDppMock).to.be.calledOnce();
+      expect(isolatedDppMock.dispose).to.be.calledOnce();
     }
   });
 
   it('should throw the error from createFromSerialized if throws not InvalidStateTransitionError', async () => {
     const error = new Error('Custom error');
-    dppMock.stateTransition.createFromSerialized.throws(error);
+    isolatedDppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
       await unserializeStateTransition(stateTransitionFixture);
@@ -70,12 +82,15 @@ describe('unserializeStateTransitionFactory', () => {
       expect.fail('should throw an error');
     } catch (e) {
       expect(e).to.be.equal(error);
+
+      expect(createIsolatedDppMock).to.be.calledOnce();
+      expect(isolatedDppMock.dispose).to.be.calledOnce();
     }
   });
 
   it('should throw a ExecutionTimedOutError if the VM Isolate execution timed out error thrown', async () => {
     const error = new Error('Script execution timed out.');
-    dppMock.stateTransition.createFromSerialized.throws(error);
+    isolatedDppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
       await unserializeStateTransition(stateTransitionFixture);
@@ -83,12 +98,15 @@ describe('unserializeStateTransitionFactory', () => {
       expect.fail('should throw an ExecutionTimedOutError');
     } catch (e) {
       expect(e).to.be.instanceOf(ExecutionTimedOutError);
+
+      expect(createIsolatedDppMock).to.be.calledOnce();
+      expect(isolatedDppMock.dispose).to.be.calledOnce();
     }
   });
 
   it('should throw a MemoryLimitExceededError if the VM Isolate memory limit exceeded error thrown', async () => {
     const error = new Error('Isolate was disposed during execution due to memory limit');
-    dppMock.stateTransition.createFromSerialized.throws(error);
+    isolatedDppMock.stateTransition.createFromSerialized.throws(error);
 
     try {
       await unserializeStateTransition(stateTransitionFixture);
@@ -96,6 +114,9 @@ describe('unserializeStateTransitionFactory', () => {
       expect.fail('should throw an ExecutionTimedOutError');
     } catch (e) {
       expect(e).to.be.instanceOf(MemoryLimitExceededError);
+
+      expect(createIsolatedDppMock).to.be.calledOnce();
+      expect(isolatedDppMock.dispose).to.be.calledOnce();
     }
   });
 });

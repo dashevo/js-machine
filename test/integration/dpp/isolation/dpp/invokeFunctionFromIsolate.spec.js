@@ -1,8 +1,8 @@
 const { Isolate } = require('isolated-vm');
-const allocateRandomMemory = require('../../../../lib/test/util/allocateRandomMemory');
-const waitShim = require('../../../../lib/test/util/setTimeoutShim');
+const allocateRandomMemory = require('../../../../../lib/test/util/allocateRandomMemory');
+const waitShim = require('../../../../../lib/test/util/setTimeoutShim');
 
-const invokeFunctionFromIsolate = require('../../../../lib/dpp/isolation/invokeFunctionFromIsolate');
+const invokeFunctionFromIsolate = require('../../../../../lib/dpp/isolation/dpp/invokeFunctionFromIsolate');
 
 describe('invokeFunctionFromIsolate', function describe() {
   let isolate;
@@ -60,7 +60,7 @@ describe('invokeFunctionFromIsolate', function describe() {
         '',
         'wait',
         [5000],
-        { timeout, arguments: { copy: true }, result: { promise: true, copy: true } },
+        { timeout, result: { promise: true } },
       );
     } catch (e) {
       error = e;
@@ -86,7 +86,7 @@ describe('invokeFunctionFromIsolate', function describe() {
         '',
         'setTimeout',
         [100000],
-        { timeout, arguments: { copy: true }, result: { promise: true, copy: true } },
+        { timeout, result: { promise: true } },
       );
     } catch (e) {
       error = e;
@@ -114,7 +114,7 @@ describe('invokeFunctionFromIsolate', function describe() {
         '',
         'infiniteLoop',
         [],
-        { timeout, arguments: { copy: true }, result: { promise: true, copy: true } },
+        { timeout, result: { promise: true } },
       );
     } catch (e) {
       error = e;
@@ -128,19 +128,18 @@ describe('invokeFunctionFromIsolate', function describe() {
     expect(timeSpent).to.be.lessThan(timeout + 1000);
   });
 
-  it('should stop execution if memory is exceeded', async () => {
-    // This invokation should be fine
+  it('should not stop execution if memory utilization is less than limit', async () => {
     await invokeFunctionFromIsolate(
       context,
       '',
       'allocateRandomMemory',
       // 45 mb should be fine, as the limit set in beforeEach hook is 50
       [45 * 1000 * 1000],
-      { arguments: { copy: true }, result: { promise: true, copy: true } },
+      { result: { promise: true } },
     );
+  });
 
-    // This one should crash
-
+  it('should stop execution if memory is exceeded', async () => {
     let error;
 
     try {
@@ -152,7 +151,7 @@ describe('invokeFunctionFromIsolate', function describe() {
         '',
         'allocateRandomMemory',
         [memoryToAllocate],
-        { arguments: { copy: true }, result: { promise: true, copy: true } },
+        { result: { promise: true } },
       );
     } catch (e) {
       error = e;
@@ -160,12 +159,5 @@ describe('invokeFunctionFromIsolate', function describe() {
 
     expect(error).to.be.instanceOf(Error);
     expect(error.message).to.be.equal('Isolate was disposed during execution due to memory limit');
-  });
-
-  it('should invoke from global', async () => {
-    await jail.set('global', jail.derefInto());
-    await context.eval('global.myFunction = function myFunction(){ return true; }');
-
-    await invokeFunctionFromIsolate(context, '', 'myFunction', []);
   });
 });
