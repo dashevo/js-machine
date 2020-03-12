@@ -1,4 +1,4 @@
-# [0.4.0](https://github.com/dashevo/js-machine/compare/v0.3.0...v0.4.0) (2020-03-09)
+# [0.11.0](https://github.com/dashevo/js-machine/compare/v0.3.0...v0.11.0) (2020-03-09)
 
 ### Bug Fixes
 
@@ -15,4 +15,4 @@
 
 * NodeJS < 12 is not supported anymore
 * blockchain state created by previous version of Machine is not supported (cause error on start)
-* see [DPP breaking changes](https://github.com/dashevo/js-dpp/blob/v0.11.0/CHANGELOG.md#0110-2020-03-09)
+* see [DPP breaking changes](https://github.com/dashevo/js-dpp/releases/tag/v0.11.0)
