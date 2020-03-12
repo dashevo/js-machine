@@ -16,12 +16,9 @@ const IdentityPublicKey = require('@dashevo/dpp/lib/identity/IdentityPublicKey')
 const { PrivateKey } = require('@dashevo/dashcore-lib');
 
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
-const { Isolate } = require('isolated-vm');
 
 const IsolatedDpp = require('../../../../../lib/dpp/isolation/dpp/IsolatedDpp');
-const compileFileWithBrowserify = require(
-  '../../../../../lib/dpp/isolation/dpp/compileFileWithBrowserify',
-);
+const createIsolatedDppSnapshot = require('../../../../../lib/dpp/isolation/dpp/createIsolatedDppSnapshot');
 
 // The regexp below explodes exponentially.
 // On a string that contains 'x' with length above 30
@@ -48,21 +45,7 @@ describe('IsolatedDpp', function main() {
   let dataContractStateTransition;
 
   before(async () => {
-    const isolateDataProviderCode = await compileFileWithBrowserify(
-      './internal/createDataProviderWrapper', 'createDataProvider',
-    );
-    const isolateDppCode = await compileFileWithBrowserify(
-      './internal/createDpp', 'createDpp',
-    );
-    const isolateTimeoutShimCode = await compileFileWithBrowserify(
-      './internal/createTimeoutShim', 'createTimeoutShim',
-    );
-
-    isolateSnapshot = await Isolate.createSnapshot([
-      { code: isolateDataProviderCode },
-      { code: isolateDppCode },
-      { code: isolateTimeoutShimCode },
-    ]);
+    isolateSnapshot = await createIsolatedDppSnapshot();
   });
 
   beforeEach(function beforeEach() {
@@ -149,9 +132,15 @@ describe('IsolatedDpp', function main() {
         it('should create state transition from serialized data', async () => {
           const serializedStateTransition = documentsStateTransition.serialize();
 
+          const timeLabel = 'DocumentsStateTransition';
+
+          console.time(timeLabel);
+
           const result = await isolatedDpp.stateTransition.createFromSerialized(
             serializedStateTransition,
           );
+
+          console.timeEnd(timeLabel);
 
           expect(result.toJSON()).to.deep.equal(documentsStateTransition.toJSON());
         });

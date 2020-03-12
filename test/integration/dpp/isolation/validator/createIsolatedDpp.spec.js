@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 const createDataProviderMock = require('@dashevo/dpp/lib/test/mocks/createDataProviderMock');
 const getDocumentsFixture = require('@dashevo/dpp/lib/test/fixtures/getDocumentsFixture');
 const getDataContractFixture = require('@dashevo/dpp/lib/test/fixtures/getDataContractFixture');
@@ -12,10 +11,12 @@ const DataContractStateTransition = require('@dashevo/dpp/lib/dataContract/state
 const IdentityPublicKey = require('@dashevo/dpp/lib/identity/IdentityPublicKey');
 const { PrivateKey } = require('@dashevo/dashcore-lib');
 
+const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
+
 const createIsolatedValidatorSnapshot = require('../../../../../lib/dpp/isolation/validator/createIsolatedValidatorSnapshot');
 const createIsolatedDpp = require('../../../../../lib/dpp/isolation/validator/createIsolatedDpp');
 
-describe.only('isolated validator', () => {
+describe('createIsolatedDpp', () => {
   let dataContract;
   let document;
   let identityCreateTransition;
@@ -23,7 +24,17 @@ describe.only('isolated validator', () => {
   let documentsStateTransition;
   let dataContractStateTransition;
 
-  it('test it out', async function it() {
+  let dataProviderMock;
+  let isolatedDpp;
+  let isolatedValidatorSnapshot;
+
+  before(async () => {
+    console.time('createIsolatedValidatorSnapshot');
+    isolatedValidatorSnapshot = await createIsolatedValidatorSnapshot();
+    console.timeEnd('createIsolatedValidatorSnapshot');
+  });
+
+  beforeEach(async function createFixturesAndMocks() {
     const privateKey = new PrivateKey();
     const publicKey = privateKey.toPublicKey().toBuffer().toString('base64');
     const publicKeyId = 1;
@@ -58,53 +69,123 @@ describe.only('isolated validator', () => {
     })];
     identityCreateTransition.sign(identityCreateTransition.getPublicKeys()[0], privateKey);
 
-
-    const dataProviderMock = createDataProviderMock(this.sinon);
-
-    console.time('createIsolatedValidatorSnapshot');
-    const snapshot = await createIsolatedValidatorSnapshot();
-    console.timeEnd('createIsolatedValidatorSnapshot');
-
-
-    console.log(snapshot.copy().byteLength);
-
+    dataProviderMock = createDataProviderMock(this.sinon);
+    dataProviderMock.fetchDataContract.resolves(dataContract);
+    dataProviderMock.fetchIdentity.resolves(identity);
 
     console.time('createIsolatedDpp');
-    const isolatedDpp = await createIsolatedDpp(
-      snapshot,
+    isolatedDpp = await createIsolatedDpp(
+      isolatedValidatorSnapshot,
       dataProviderMock,
       { memoryLimit: 128, timeout: 500 },
     );
     console.timeEnd('createIsolatedDpp');
+  });
 
+  describe('stateTransition', () => {
+    describe('#createFromSerialized', () => {
+      describe('DocumentsStateTransition', () => {
+        it('should pass through validation result', async () => {
+          delete documentsStateTransition.signature;
 
-    let result;
-    try {
-      console.time('isolatedDpp.stateTransition.createFromSerialized');
-      result = await isolatedDpp.stateTransition.createFromSerialized(
-        dataContractStateTransition.serialize(),
-      );
-    } catch (e) {
-    } finally {
-      console.timeEnd('isolatedDpp.stateTransition.createFromSerialized');
-      // isolatedDpp.dispose();
-    }
+          const serializedDocumentsStateTransition = documentsStateTransition.serialize();
 
-    try {
-      console.time('isolatedDpp.stateTransition.createFromSerialized2');
-      result = await isolatedDpp.stateTransition.createFromSerialized(
-        dataContractStateTransition.serialize(),
-      );
-    } catch (e) {
+          const timeLabel = 'invalid DocumentsStateTransition';
 
-    } finally {
-      console.timeEnd('isolatedDpp.stateTransition.createFromSerialized2');
-      // isolatedDpp.dispose();
-    }
+          try {
+            console.time(timeLabel);
 
+            await isolatedDpp.stateTransition.createFromSerialized(
+              serializedDocumentsStateTransition,
+            );
 
-    isolatedDpp.dispose();
+            expect.fail('Error was not thrown');
+          } catch (e) {
+            expect(e).to.be.an.instanceOf(InvalidStateTransitionError);
 
-    console.dir(result);
+            const [error] = e.getErrors();
+            expect(error.name).to.equal('JsonSchemaError');
+            expect(error.params.missingProperty).to.equal('signature');
+          } finally {
+            console.timeEnd(timeLabel);
+          }
+        });
+
+        it('should create state transition from serialized data', async () => {
+          const serializedDocumentsStateTransition = documentsStateTransition.serialize();
+
+          const timeLabel = 'DocumentsStateTransition';
+
+          console.time(timeLabel);
+
+          const result = await isolatedDpp.stateTransition.createFromSerialized(
+            serializedDocumentsStateTransition,
+          );
+
+          console.timeEnd(timeLabel);
+
+          expect(result.toJSON()).to.deep.equal(documentsStateTransition.toJSON());
+        });
+      });
+
+      describe('DataContractStateTransition', () => {
+        it('should pass through validation result', async () => {
+          delete dataContractStateTransition.signature;
+
+          const serializedStateTransition = dataContractStateTransition.serialize();
+
+          try {
+            await isolatedDpp.stateTransition.createFromSerialized(
+              serializedStateTransition,
+            );
+
+            expect.fail('Error was not thrown');
+          } catch (e) {
+            expect(e).to.be.an.instanceOf(InvalidStateTransitionError);
+
+            const [error] = e.getErrors();
+            expect(error.name).to.equal('JsonSchemaError');
+            expect(error.params.missingProperty).to.equal('signature');
+          }
+        });
+
+        it('should create state transition from serialized data', async () => {
+          const serializedStateTransition = dataContractStateTransition.serialize();
+
+          const result = await isolatedDpp.stateTransition.createFromSerialized(
+            serializedStateTransition,
+          );
+
+          expect(result.toJSON()).to.deep.equal(dataContractStateTransition.toJSON());
+        });
+      });
+
+      describe('IdentityCreateTransition', () => {
+        it('should pass through validation result', async () => {
+          delete identityCreateTransition.lockedOutPoint;
+
+          try {
+            await isolatedDpp.stateTransition.createFromSerialized(
+              identityCreateTransition.serialize(),
+            );
+            expect.fail('Error was not thrown');
+          } catch (e) {
+            expect(e).to.be.an.instanceOf(InvalidStateTransitionError);
+
+            const [error] = e.getErrors();
+            expect(error.name).to.equal('JsonSchemaError');
+            expect(error.params.missingProperty).to.equal('lockedOutPoint');
+          }
+        });
+
+        it('should create state transition from serialized data', async () => {
+          const result = await isolatedDpp.stateTransition.createFromSerialized(
+            identityCreateTransition.serialize(),
+          );
+
+          expect(result.toJSON()).to.deep.equal(identityCreateTransition.toJSON());
+        });
+      });
+    });
   });
 });
