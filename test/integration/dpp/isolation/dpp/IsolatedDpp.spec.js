@@ -18,9 +18,9 @@ const { PrivateKey } = require('@dashevo/dashcore-lib');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 const { Isolate } = require('isolated-vm');
 
-const IsolatedDpp = require('../../../../lib/dpp/isolation/IsolatedDpp');
+const IsolatedDpp = require('../../../../../lib/dpp/isolation/dpp/IsolatedDpp');
 const compileFileWithBrowserify = require(
-  '../../../../lib/dpp/isolation/compileFileWithBrowserify',
+  '../../../../../lib/dpp/isolation/dpp/compileFileWithBrowserify',
 );
 
 // The regexp below explodes exponentially.

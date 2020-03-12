@@ -1,8 +1,8 @@
 const { Isolate } = require('isolated-vm');
-const allocateRandomMemory = require('../../../../lib/test/util/allocateRandomMemory');
-const waitShim = require('../../../../lib/test/util/setTimeoutShim');
+const allocateRandomMemory = require('../../../../../lib/test/util/allocateRandomMemory');
+const waitShim = require('../../../../../lib/test/util/setTimeoutShim');
 
-const invokeFunctionFromIsolate = require('../../../../lib/dpp/isolation/invokeFunctionFromIsolate');
+const invokeFunctionFromIsolate = require('../../../../../lib/dpp/isolation/dpp/invokeFunctionFromIsolate');
 
 describe('invokeFunctionFromIsolate', function describe() {
   let isolate;

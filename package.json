@@ -50,6 +50,7 @@
     "@dashevo/drive-grpc": "~0.3.0",
     "@dashevo/grpc-common": "~0.2.0",
     "abci": "^5.0.1",
+    "ajv": "latest",
     "awilix": "^4.2.2",
     "browserify": "^16.5.0",
     "cbor": "^5.0.1",
@@ -59,8 +60,9 @@
     "jayson": "^3.1.1",
     "level-rocksdb": "^4.0.0",
     "level-transactions": "^2.1.4",
+    "long": "^4.0.0",
     "lru-cache": "^5.1.1",
     "setimmediate": "^1.0.5",
-    "long": "^4.0.0"
+    "through2": "latest"
   }
 }
