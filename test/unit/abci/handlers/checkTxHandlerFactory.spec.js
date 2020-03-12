@@ -1,3 +1,4 @@
+const Long = require('long');
 const {
   abci: {
     ResponseCheckTx,
@@ -48,7 +49,7 @@ describe('checkTxHandlerFactory', () => {
 
     rateLimiterMock = new RateLimiterMock(this.sinon);
 
-    lastBlockHeight = 1;
+    lastBlockHeight = Long.fromInt(1);
     lastBlockAppHash = Buffer.from('something');
     blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
 
@@ -94,7 +95,7 @@ describe('checkTxHandlerFactory', () => {
     });
 
     it('should validate a State Transition with rate limiter and throw quota exceeded error', async () => {
-      lastBlockHeight = 11;
+      lastBlockHeight = Long.fromInt(11);
       lastBlockAppHash = Buffer.from('something');
       blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
 
@@ -126,7 +127,7 @@ describe('checkTxHandlerFactory', () => {
     });
 
     it('should validate a State Transition with rate limiter and throw user is banned error', async () => {
-      lastBlockHeight = 111;
+      lastBlockHeight = Long.fromInt(111);
       lastBlockAppHash = Buffer.from('something');
       blockchainState = new BlockchainState(lastBlockHeight, lastBlockAppHash);
 
