@@ -63,6 +63,6 @@
     "long": "^4.0.0",
     "lru-cache": "^5.1.1",
     "setimmediate": "^1.0.5",
-    "through2": "latest"
+    "through2": "^3.0.1"
   }
 }
