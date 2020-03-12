@@ -48,21 +48,82 @@ describe('IsolatedDpp', function main() {
   let dataContractStateTransition;
 
   before(async () => {
-    const isolateDataProviderCode = await compileFileWithBrowserify(
-      './internal/createDataProviderWrapper', 'createDataProvider',
-    );
-    const isolateDppCode = await compileFileWithBrowserify(
-      './internal/createDpp', 'createDpp',
-    );
     const isolateTimeoutShimCode = await compileFileWithBrowserify(
       './internal/createTimeoutShim', 'createTimeoutShim',
     );
+    const isolateDataProviderCode = await compileFileWithBrowserify(
+      './internal/createDataProviderWrapper', 'createDataProvider',
+    );
+
+    const isolateDppCode = await compileFileWithBrowserify(
+      './internal/createDpp', 'createDpp',
+    );
+    const ajv = await compileFileWithBrowserify('ajv', 'Ajv');
+    const kek = await compileFileWithBrowserify('./internal/setTimeout', 'setTimeout');
+    const kek2 = await compileFileWithBrowserify('./internal/setTimeout', 'setImmediate');
+    const kek3 = await compileFileWithBrowserify('./internal/useTimeout', 'location');
+
+    // const isol = new Isolate();
+    // const context = await isol.createContext();
+    // await context.eval(isolateDppCode);
+    // await context.eval('dpp = createDpp({});');
 
     isolateSnapshot = await Isolate.createSnapshot([
-      { code: isolateDataProviderCode },
-      { code: isolateDppCode },
       { code: isolateTimeoutShimCode },
-    ]);
+      { code: isolateDataProviderCode },
+      // { code: kek },
+      // { code: kek2 },
+      // { code: kek3 },
+      { code: isolateDppCode },
+      // { code: ajv },
+    ], `
+      // const ajv = new Ajv();
+      // const rawStateTransition = {
+      //   protocolVersion: 0,
+      //   type: 3,
+      //   signature: 'H1kOzA+sRuy/dtvYZsdUZ793GuxH2JAwvsbg16m37DodULJLZ7Y/hzPhBCvIxjLiZRwwXcf94aIgZglrm7i6Eo0=',
+      //   signaturePublicKeyId: 1,
+      //   identityType: 1,
+      //   lockedOutPoint: 'A+sRuy/dtvYZsdUZ793GuxH2JAwvsbg16m37DodULJLZ7Y/h',
+      //   publicKeys: [
+      //     {
+      //       id: 1,
+      //       type: 1,
+      //       data: 'A6zlANVwDKO2/qu6hpAsgBR/qpPc/GCkvsIzyt7IurgM',
+      //       isEnabled: true,
+      //     },
+      //   ],
+      // };
+
+      // throw new Error("kek");
+      // throw JSON.stringify(DashPlatformProtocol);
+
+      // const dpp = new DashPlatformProtocol({ dataProvider: {
+      //   fetchIdentity() {},
+      //   fetchDataContract() {},
+      //   fetchTransaction() {},
+      //   fetchDocuments() {},
+      // } });
+
+      // const warmupDpp = bootstrapDpp({
+      //   fetchIdentity() {},
+      //   fetchDataContract() {},
+      //   fetchTransaction() {},
+      //   fetchDocuments() {},
+      // });
+
+      // warmupDpp.stateTransition.validateData(rawStateTransition).catch((e) => { });
+    `);
+
+    // console.log('ne keke');
+    //
+    // const is = new Isolate({ snapshot: isolateSnapshot });
+    //
+    // const con = await is.createContext();
+    //
+    // console.log('kek');
+    //
+    // process.exit(1);
   });
 
   beforeEach(function beforeEach() {
@@ -221,14 +282,32 @@ describe('IsolatedDpp', function main() {
         dataProviderMock
           .fetchIdentity
           .withArgs(identityCreateTransition.identityId)
-          .resolves(undefined);
+          .resolves(identity);
+        // const somereel
 
         const rawStateTransition = identityCreateTransition.toJSON();
 
+        console.time('a');
         // const result = await dpp.stateTransition.validateData(rawStateTransition);
         const isolatedResult = await isolatedDpp.stateTransition.validateData(
           rawStateTransition,
         );
+        console.timeEnd('a');
+        console.log('end result', isolatedResult);
+
+        console.time('a');
+        // const result = await dpp.stateTransition.validateData(rawStateTransition);
+        const isolatedResult2 = await isolatedDpp.stateTransition.validateData(
+          rawStateTransition,
+        );
+        console.timeEnd('a');
+
+        console.time('a');
+        // const result = await dpp.stateTransition.validateData(rawStateTransition);
+        const isolatedResult3 = await isolatedDpp.stateTransition.validateData(
+          rawStateTransition,
+        );
+        console.timeEnd('a');
 
         // expect(result.isValid()).to.be.true();
         // expect(result).to.deep.equal(isolatedResult);
