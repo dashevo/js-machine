@@ -14,7 +14,7 @@ const { PrivateKey } = require('@dashevo/dashcore-lib');
 const InvalidStateTransitionError = require('@dashevo/dpp/lib/stateTransition/errors/InvalidStateTransitionError');
 
 const createIsolatedValidatorSnapshot = require('../../../../../lib/dpp/isolation/validator/createIsolatedValidatorSnapshot');
-const createIsolatedDpp = require('../../../../../lib/dpp/isolation/validator/createIsolatedDpp');
+const createIsolatedDppFactory = require('../../../../../lib/dpp/isolation/validator/createIsolatedDppFactory');
 
 describe('createIsolatedDpp', () => {
   let dataContract;
@@ -25,13 +25,11 @@ describe('createIsolatedDpp', () => {
   let dataContractStateTransition;
 
   let dataProviderMock;
-  let isolatedDpp;
+  let createIsolatedDpp;
   let isolatedValidatorSnapshot;
 
   before(async () => {
-    console.time('createIsolatedValidatorSnapshot');
     isolatedValidatorSnapshot = await createIsolatedValidatorSnapshot();
-    console.timeEnd('createIsolatedValidatorSnapshot');
   });
 
   beforeEach(async function createFixturesAndMocks() {
@@ -73,13 +71,11 @@ describe('createIsolatedDpp', () => {
     dataProviderMock.fetchDataContract.resolves(dataContract);
     dataProviderMock.fetchIdentity.resolves(identity);
 
-    console.time('createIsolatedDpp');
-    isolatedDpp = await createIsolatedDpp(
+    createIsolatedDpp = createIsolatedDppFactory(
       isolatedValidatorSnapshot,
+      { memoryLimit: 10, timeout: 300 },
       dataProviderMock,
-      { memoryLimit: 128, timeout: 500 },
     );
-    console.timeEnd('createIsolatedDpp');
   });
 
   describe('stateTransition', () => {
@@ -90,11 +86,9 @@ describe('createIsolatedDpp', () => {
 
           const serializedDocumentsStateTransition = documentsStateTransition.serialize();
 
-          const timeLabel = 'invalid DocumentsStateTransition';
+          const isolatedDpp = await createIsolatedDpp();
 
           try {
-            console.time(timeLabel);
-
             await isolatedDpp.stateTransition.createFromSerialized(
               serializedDocumentsStateTransition,
             );
@@ -107,24 +101,24 @@ describe('createIsolatedDpp', () => {
             expect(error.name).to.equal('JsonSchemaError');
             expect(error.params.missingProperty).to.equal('signature');
           } finally {
-            console.timeEnd(timeLabel);
+            isolatedDpp.dispose();
           }
         });
 
         it('should create state transition from serialized data', async () => {
           const serializedDocumentsStateTransition = documentsStateTransition.serialize();
 
-          const timeLabel = 'DocumentsStateTransition';
+          const isolatedDpp = await createIsolatedDpp();
 
-          console.time(timeLabel);
+          try {
+            const result = await isolatedDpp.stateTransition.createFromSerialized(
+              serializedDocumentsStateTransition,
+            );
 
-          const result = await isolatedDpp.stateTransition.createFromSerialized(
-            serializedDocumentsStateTransition,
-          );
-
-          console.timeEnd(timeLabel);
-
-          expect(result.toJSON()).to.deep.equal(documentsStateTransition.toJSON());
+            expect(result.toJSON()).to.deep.equal(documentsStateTransition.toJSON());
+          } finally {
+            isolatedDpp.dispose();
+          }
         });
       });
 
@@ -133,6 +127,8 @@ describe('createIsolatedDpp', () => {
           delete dataContractStateTransition.signature;
 
           const serializedStateTransition = dataContractStateTransition.serialize();
+
+          const isolatedDpp = await createIsolatedDpp();
 
           try {
             await isolatedDpp.stateTransition.createFromSerialized(
@@ -146,23 +142,33 @@ describe('createIsolatedDpp', () => {
             const [error] = e.getErrors();
             expect(error.name).to.equal('JsonSchemaError');
             expect(error.params.missingProperty).to.equal('signature');
+          } finally {
+            isolatedDpp.dispose();
           }
         });
 
         it('should create state transition from serialized data', async () => {
           const serializedStateTransition = dataContractStateTransition.serialize();
 
-          const result = await isolatedDpp.stateTransition.createFromSerialized(
-            serializedStateTransition,
-          );
+          const isolatedDpp = await createIsolatedDpp();
 
-          expect(result.toJSON()).to.deep.equal(dataContractStateTransition.toJSON());
+          try {
+            const result = await isolatedDpp.stateTransition.createFromSerialized(
+              serializedStateTransition,
+            );
+
+            expect(result.toJSON()).to.deep.equal(dataContractStateTransition.toJSON());
+          } finally {
+            isolatedDpp.dispose();
+          }
         });
       });
 
       describe('IdentityCreateTransition', () => {
         it('should pass through validation result', async () => {
           delete identityCreateTransition.lockedOutPoint;
+
+          const isolatedDpp = await createIsolatedDpp();
 
           try {
             await isolatedDpp.stateTransition.createFromSerialized(
@@ -175,15 +181,23 @@ describe('createIsolatedDpp', () => {
             const [error] = e.getErrors();
             expect(error.name).to.equal('JsonSchemaError');
             expect(error.params.missingProperty).to.equal('lockedOutPoint');
+          } finally {
+            isolatedDpp.dispose();
           }
         });
 
         it('should create state transition from serialized data', async () => {
-          const result = await isolatedDpp.stateTransition.createFromSerialized(
-            identityCreateTransition.serialize(),
-          );
+          const isolatedDpp = await createIsolatedDpp();
 
-          expect(result.toJSON()).to.deep.equal(identityCreateTransition.toJSON());
+          try {
+            const result = await isolatedDpp.stateTransition.createFromSerialized(
+              identityCreateTransition.serialize(),
+            );
+
+            expect(result.toJSON()).to.deep.equal(identityCreateTransition.toJSON());
+          } finally {
+            isolatedDpp.dispose();
+          }
         });
       });
     });

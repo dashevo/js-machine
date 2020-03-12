@@ -132,15 +132,9 @@ describe('IsolatedDpp', function main() {
         it('should create state transition from serialized data', async () => {
           const serializedStateTransition = documentsStateTransition.serialize();
 
-          const timeLabel = 'DocumentsStateTransition';
-
-          console.time(timeLabel);
-
           const result = await isolatedDpp.stateTransition.createFromSerialized(
             serializedStateTransition,
           );
-
-          console.timeEnd(timeLabel);
 
           expect(result.toJSON()).to.deep.equal(documentsStateTransition.toJSON());
         });
