@@ -24,14 +24,6 @@ const UpdateStatePromiseClientMock = require('../../../../lib/test/mock/UpdateSt
 
 const InvalidArgumentAbciError = require('../../../../lib/abci/errors/InvalidArgumentAbciError');
 const AbciError = require('../../../../lib/abci/errors/AbciError');
-const RateLimiterQuotaExceededAbciError = require(
-  '../../../../lib/abci/errors/RateLimiterQuotaExceededAbciError',
-);
-const RateLimiterUserIsBannedAbciError = require(
-  '../../../../lib/abci/errors/RateLimiterUserIsBannedAbciError',
-);
-
-const RateLimiterMock = require('../../../../lib/test/mock/RateLimiterMock');
 
 describe('deliverTxHandlerFactory', () => {
   let deliverTxHandler;
@@ -52,7 +44,6 @@ describe('deliverTxHandlerFactory', () => {
   let blockExecutionDBTransactionsMock;
   let dbTransaction;
   let dpp;
-  let rateLimiterMock;
   let unserializeStateTransitionMock;
 
   beforeEach(function beforeEach() {
@@ -122,9 +113,6 @@ describe('deliverTxHandlerFactory', () => {
       getIdentityTransaction: this.sinon.stub().returns(dbTransaction),
     };
 
-    rateLimiterMock = new RateLimiterMock(this.sinon);
-
-
     unserializeStateTransitionMock = this.sinon.stub();
 
     deliverTxHandler = deliverTxHandlerFactory(
@@ -134,8 +122,6 @@ describe('deliverTxHandlerFactory', () => {
       blockchainStateMock,
       identityRepositoryMock,
       blockExecutionDBTransactionsMock,
-      rateLimiterMock,
-      false,
     );
   });
 
@@ -155,44 +141,6 @@ describe('deliverTxHandlerFactory', () => {
 
     expect(response).to.be.an.instanceOf(ResponseDeliverTx);
     expect(response.code).to.equal(0);
-
-    expect(driveUpdateStateClient.applyStateTransition).to.be.calledOnceWith(
-      applyStateTransitionRequest,
-    );
-
-    expect(identityRepositoryMock.store).to.be.not.called();
-    expect(identityRepositoryMock.fetch).to.be.not.called();
-  });
-
-  it('should apply a document State Transition with rate limiter and return response with code 0', async () => {
-    unserializeStateTransitionMock.resolves(documentsStateTransitionFixture);
-
-    deliverTxHandler = deliverTxHandlerFactory(
-      unserializeStateTransitionMock,
-      dppMock,
-      driveUpdateStateClient,
-      blockchainStateMock,
-      identityRepositoryMock,
-      blockExecutionDBTransactionsMock,
-      rateLimiterMock,
-      true,
-    );
-
-    const response = await deliverTxHandler(documentRequest);
-
-    const applyStateTransitionRequest = new ApplyStateTransitionRequest();
-
-    applyStateTransitionRequest.setBlockHeight(blockHeight.toInt());
-    applyStateTransitionRequest.setBlockHash(blockHash);
-
-    applyStateTransitionRequest.setStateTransition(
-      documentsStateTransitionFixture.serialize(),
-    );
-
-    expect(response).to.be.an.instanceOf(ResponseDeliverTx);
-    expect(response.code).to.equal(0);
-    expect(response.tags.length).to.be.equal(1);
-    expect(unserializeStateTransitionMock).to.be.calledOnceWith(documentRequest.tx);
 
     expect(driveUpdateStateClient.applyStateTransition).to.be.calledOnceWith(
       applyStateTransitionRequest,
@@ -334,70 +282,5 @@ describe('deliverTxHandlerFactory', () => {
       expect(e.getMessage()).to.equal('Invalid argument: Unknown State Transition');
       expect(e.getCode()).to.equal(AbciError.CODES.INVALID_ARGUMENT);
     }
-  });
-
-  describe('with rate limiter', () => {
-    it('should validate a State Transition with rate limiter and throw quota exceeded error', async () => {
-      unserializeStateTransitionMock.resolves(documentsStateTransitionFixture);
-
-      rateLimiterMock.getBannedKey.returns('rateLimitedBanKey');
-      rateLimiterMock.isQuotaExceeded.resolves(true);
-
-      deliverTxHandler = deliverTxHandlerFactory(
-        unserializeStateTransitionMock,
-        dppMock,
-        driveUpdateStateClient,
-        blockchainStateMock,
-        identityRepositoryMock,
-        blockExecutionDBTransactionsMock,
-        rateLimiterMock,
-        true,
-      );
-
-      const { userId } = documentsStateTransitionFixture.documents[0];
-
-      try {
-        await deliverTxHandler(documentRequest);
-        expect.fail('Error was not thrown');
-      } catch (e) {
-        expect(e).to.be.an.instanceOf(RateLimiterQuotaExceededAbciError);
-        expect(e.getCode()).to.equal(AbciError.CODES.RATE_LIMITER_QUOTA_EXCEEDED);
-        expect(e.getUserId()).to.equal(userId);
-        expect(e.data).to.deep.equal({ userId });
-        expect(e.tags).to.deep.equal({
-          rateLimitedBanKey: userId,
-          bannedUserIds: userId,
-        });
-      }
-    });
-
-    it('should validate a State Transition with rate limiter and throw user is banned error', async () => {
-      unserializeStateTransitionMock.resolves(documentsStateTransitionFixture);
-
-      rateLimiterMock.isBannedUser.resolves(true);
-
-      deliverTxHandler = deliverTxHandlerFactory(
-        unserializeStateTransitionMock,
-        dppMock,
-        driveUpdateStateClient,
-        blockchainStateMock,
-        identityRepositoryMock,
-        blockExecutionDBTransactionsMock,
-        rateLimiterMock,
-        true,
-      );
-
-      const { userId } = documentsStateTransitionFixture.documents[0];
-
-      try {
-        await deliverTxHandler(documentRequest);
-        expect.fail('Error was not thrown');
-      } catch (e) {
-        expect(e).to.be.an.instanceOf(RateLimiterUserIsBannedAbciError);
-        expect(e.getCode()).to.equal(AbciError.CODES.RATE_LIMITER_BANNED);
-        expect(e.getUserId()).to.equal(userId);
-        expect(e.data).to.deep.equal({ userId });
-      }
-    });
   });
 });
